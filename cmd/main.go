@@ -2,7 +2,10 @@ package main
 
 import (
 	"log"
+	"os"
 
+	"github.com/joho/godotenv"
+	_ "github.com/lib/pq"
 	classosbackend "github.com/rinat0880/classOS_backend"
 	"github.com/rinat0880/classOS_backend/pkg/handler"
 	"github.com/rinat0880/classOS_backend/pkg/repository"
@@ -15,7 +18,23 @@ func main() {
 		log.Fatalf("error in initializing config: %s", err.Error())
 	}
 
-	repos := repository.NewRepository()
+	if err := godotenv.Load(); err != nil {
+		log.Fatalf("error loading env vars: %s", err.Error())
+	}
+
+	db, err := repository.NewPostgresDB(repository.Config{
+		Host:     viper.GetString("db.host"),
+		Port:     viper.GetString("db.port"),
+		Username: viper.GetString("db.username"),		
+		Password: os.Getenv("DB_PASSWORD"),
+		DBName:   viper.GetString("db.dbname"),
+		SSLMode:  viper.GetString("db.sslmode"),
+	})
+	if err != nil {
+		log.Fatalf("err in init db: %s", err.Error())
+	}
+
+	repos := repository.NewRepository(db)
 	services := service.NewService(repos)
 	handlers := handler.NewHandler(services)
 

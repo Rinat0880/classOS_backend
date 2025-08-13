@@ -23,5 +23,6 @@ CREATE TABLE
 CREATE TABLE
     whitelist_global (
         id SERIAL PRIMARY KEY,
+        group_id INT NOT NULL REFERENCES groups(id) ON DELETE CASCADE,
         resource TEXT NOT NULL
     );
