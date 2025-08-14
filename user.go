@@ -1,9 +1,9 @@
 package classosbackend
 
-
 type User struct {
-	ID        uint      `json:"id"`
-	FullName  string    `json:"full_name"`
-	Password  string    `json:"-"`    
-	Role      string    `json:"role"` 
+	ID       uint   `json:"id"`
+	Name     string `json:"name"`
+	Username string `json:"username"`
+	Password string `json:"-"`
+	Role     string `json:"role"`
 }

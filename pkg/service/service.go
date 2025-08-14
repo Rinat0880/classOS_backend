@@ -1,8 +1,12 @@
 package service
 
-import "github.com/rinat0880/classOS_backend/pkg/repository"
+import (
+	classosbackend "github.com/rinat0880/classOS_backend"
+	"github.com/rinat0880/classOS_backend/pkg/repository"
+)
 
 type Authorization interface {
+	CreateUser(user classosbackend.User) (int, error)
 }
 
 type Group interface {
@@ -18,5 +22,7 @@ type Service struct {
 }
 
 func NewService(repos *repository.Repository) *Service {
-	return &Service{}
+	return &Service{
+		Authorization: NewAuthService(repos.Authorization),
+	}
 }

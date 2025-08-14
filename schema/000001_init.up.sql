@@ -1,7 +1,8 @@
 CREATE TABLE
     users (
         id SERIAL PRIMARY KEY,
-        fullname varchar(255) not null unique,
+        name varchar(255) not null,
+        username varchar(255) not null unique,
         role TEXT NOT NULL CHECK (role IN ('admin', 'client')),
         password_hash varchar(255) not null
     );
@@ -21,7 +22,7 @@ CREATE TABLE
     );
 
 CREATE TABLE
-    whitelist_global (
+    whitelist (
         id SERIAL PRIMARY KEY,
         group_id INT NOT NULL REFERENCES groups(id) ON DELETE CASCADE,
         resource TEXT NOT NULL
