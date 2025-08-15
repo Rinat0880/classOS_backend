@@ -7,6 +7,7 @@ import (
 
 type Authorization interface {
 	CreateUser(user classosbackend.User) (int, error)
+	GetUser(username, password string) (classosbackend.User, error)
 }
 
 type Group interface {
