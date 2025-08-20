@@ -3,8 +3,8 @@ package classosbackend
 import "time"
 
 type Group struct {
-	ID        int64     `json:"id"`
-	Name      string    `json:"name"`
+	ID        int64     `json:"id" db:"id"`
+	Name      string    `json:"name" db:"name" binding:"required"`
 }
 
 type WhitelistEntry struct {
