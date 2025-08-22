@@ -76,9 +76,53 @@ func (h *Handler) getGroupById(c *gin.Context) {
 }
 
 func (h *Handler) updateGroup(c *gin.Context) {
+	userid, err := getUserId(c)
+	if err != nil {
+		return
+	}
 
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		newErrorResponse(c, http.StatusBadRequest, "invalid id in params")
+		return
+	}
+
+	var input classosbackend.UpdateGroupInput
+	if err := c.BindJSON(&input); err != nil {
+		newErrorResponse(c, http.StatusBadRequest, err.Error())
+		return
+	}
+
+
+	if err := h.services.Update(userid, id, input); err != nil {
+		newErrorResponse(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	c.JSON(http.StatusOK, statusResponse{
+		Status: "Ok",
+	})
 }
 
 func (h *Handler) deleteGroup(c *gin.Context) {
+	userid, err := getUserId(c)
+	if err != nil {
+		return
+	}
 
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		newErrorResponse(c, http.StatusBadRequest, "invalid id in params")
+		return
+	}
+
+	err = h.services.Group.Delete(userid, id)
+	if err != nil {
+		newErrorResponse(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	c.JSON(http.StatusOK, statusResponse{
+		Status: "ok",
+	})
 }

@@ -2,9 +2,11 @@ package repository
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/jmoiron/sqlx"
 	classosbackend "github.com/rinat0880/classOS_backend"
+	"github.com/sirupsen/logrus"
 )
 
 type GroupPostgres struct {
@@ -60,4 +62,34 @@ func (r *GroupPostgres) GetById(userId, groupId int) (classosbackend.Group, erro
 	err := r.db.Get(&group, query, groupId)
 
 	return group, err
+}
+
+func (r *GroupPostgres) Delete(userId, groupId int) error {
+	query := fmt.Sprintf("DELETE FROM %s WHERE id = $1", groupsTable)
+	_, err := r.db.Exec(query, groupId)
+
+	return err
+}
+
+func (r *GroupPostgres) Update(userId, groupId int, input classosbackend.UpdateGroupInput) error {
+	setValues := make([]string, 0)
+	args := make([]interface{}, 0)
+	argId := 1
+	
+	if input.Name != nil {
+		setValues = append(setValues, fmt.Sprintf("name=$%d", argId))
+		args = append(args, *input.Name)
+		argId++
+	}
+
+	setQuery := strings.Join(setValues, ", ")
+	
+	query := fmt.Sprintf("UPDATE %s Set %s Where id = $%d", groupsTable, setQuery, argId)
+	args = append(args, groupId)
+
+	logrus.Debugf("updateQuery: %s", query)
+	logrus.Debugf("args: %s", args)
+
+	_, err := r.db.Exec(query, args...)
+	return err
 }

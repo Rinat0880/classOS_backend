@@ -15,6 +15,8 @@ type Group interface {
 	Create(userId int, group classosbackend.Group) (int, error)
 	GetAll(userId int) ([]classosbackend.Group, error)
 	GetById(userId, groupId int) (classosbackend.Group, error)
+	Delete(userId, groupId int) error
+	Update(userId, groupId int, input classosbackend.UpdateGroupInput) error
 }
 
 type User interface {
