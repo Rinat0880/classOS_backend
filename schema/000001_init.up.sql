@@ -27,3 +27,43 @@ CREATE TABLE
         group_id INT NOT NULL REFERENCES groups(id) ON DELETE CASCADE,
         resource TEXT NOT NULL
     );
+
+INSERT INTO users (name, username, role, password_hash)
+VALUES (
+    'Super Admin',
+    'admin01',
+    'admin',
+    '64687569676664677339383334356b6a6e6664393867646a37cc096b78234d87087d0b45986bea7ad2614b72'
+)
+ON CONFLICT (username) DO NOTHING;
+
+
+CREATE OR REPLACE FUNCTION prevent_superadmin_delete()
+RETURNS trigger AS $$
+BEGIN
+    IF OLD.username = 'admin01' THEN
+        RAISE EXCEPTION 'Суперадмина удалить нельзя';
+    END IF;
+    RETURN OLD;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_prevent_superadmin_delete ON users;
+CREATE TRIGGER trg_prevent_superadmin_delete
+BEFORE DELETE ON users
+FOR EACH ROW EXECUTE FUNCTION prevent_superadmin_delete();
+
+CREATE OR REPLACE FUNCTION prevent_superadmin_update()
+RETURNS trigger AS $$
+BEGIN
+    IF OLD.username = 'admin01' AND NEW.role <> 'admin01' THEN
+        RAISE EXCEPTION 'Нельзя изменить роль суперадмина';
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_prevent_superadmin_update ON users;
+CREATE TRIGGER trg_prevent_superadmin_update
+BEFORE UPDATE ON users
+FOR EACH ROW EXECUTE FUNCTION prevent_superadmin_update();

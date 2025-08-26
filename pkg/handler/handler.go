@@ -22,7 +22,7 @@ func (h *Handler) InitRoutes() *gin.Engine {
 		auth.POST("/sign-in", h.signIn)
 	}
 
-	api := router.Group("/api", h.userIdentity)
+	api := router.Group("/api", h.userIdentity, h.adminOnly)
 	{
 		groups := api.Group("/groups")
 		{
@@ -31,20 +31,21 @@ func (h *Handler) InitRoutes() *gin.Engine {
 			groups.GET("/:id", h.getGroupById)
 			groups.PATCH("/:id", h.updateGroup)
 			groups.DELETE("/:id", h.deleteGroup)
-			// groups.GET("/:id/users")
-			// groups.POST("/:id/users")
 
 			// policies := groups.Group("/:id/policy")
 			// {
 			// 	policies.GET("/")
 			// 	policies.PATCH("/")
 			// }
+			users := groups.Group(":id/users")
+			{
+				users.GET("/", h.getAllUsers)
+				users.POST("/", h.createUser)
+			}
 		}
 
 		users := api.Group("/users")
 		{
-			users.GET("/", h.getAllUsers)
-			users.POST("/", h.createUser)
 			users.GET("/:id", h.getUserById)
 			users.PATCH("/:id", h.updateUser)
 			users.DELETE("/:id", h.deleteUser)

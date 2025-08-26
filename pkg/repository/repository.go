@@ -19,6 +19,8 @@ type Group interface {
 }
 
 type User interface {
+	Create(groupId int, user classosbackend.User) (int, error)
+	GetAll(userId, groupId int) ([]classosbackend.User, error)
 }
 
 type Repository struct {
@@ -31,5 +33,6 @@ func NewRepository(db *sqlx.DB) *Repository {
 	return &Repository{
 		Authorization: NewAuthPostgres(db),
 		Group: NewGroupPostgres(db),
+		User: NewUserPostgres(db),
 	}
 }

@@ -14,25 +14,27 @@ const (
 )
 
 func (h *Handler) userIdentity(c *gin.Context) {
-	header := c.GetHeader(authorizationHeader)
+	header := c.GetHeader("Authorization")
 	if header == "" {
-		newErrorResponse(c, http.StatusUnauthorized, "empty auht header")
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "empty auth header"})
 		return
 	}
 
 	headerParts := strings.Split(header, " ")
 	if len(headerParts) != 2 {
-		newErrorResponse(c, http.StatusUnauthorized, "invalid auth header")
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "invalid auth header"})
 		return
 	}
 
-	userId, err := h.services.Authorization.ParseToken(headerParts[1])
+	userId, role, err := h.services.Authorization.ParseToken(headerParts[1])
 	if err != nil {
-		newErrorResponse(c, http.StatusUnauthorized, "err.Error()")
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.Set(userCtx, userId)
+	c.Set("userId", userId)
+	c.Set("role", role)
+	c.Next()
 }
 
 func getUserId(c *gin.Context) (int, error) {
@@ -50,3 +52,20 @@ func getUserId(c *gin.Context) (int, error) {
 
 	return idInt, nil
 }
+
+func (h *Handler) adminOnly(c *gin.Context) {
+	roleVal, exists := c.Get("role")
+	if !exists {
+		c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "role not found"})
+		return
+	}
+
+	role := roleVal.(string)
+	if role != "admin" {
+		c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "admin access required"})
+		return
+	}
+
+	c.Next()
+}
+
