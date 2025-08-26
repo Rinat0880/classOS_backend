@@ -13,25 +13,25 @@ func NewGroupService(repo repository.Group) *GroupService {
 	return &GroupService{repo: repo}
 }
 
-func (s *GroupService) Create(userId int, group classosbackend.Group) (int, error) {
-	return s.repo.Create(userId, group)
+func (s *GroupService) Create(checkerId int, group classosbackend.Group) (int, error) {
+	return s.repo.Create(checkerId, group)
 }
 
-func (s *GroupService) GetAll(userId int) ([]classosbackend.Group, error) {
-	return s.repo.GetAll(userId)
+func (s *GroupService) GetAll(checkerId int) ([]classosbackend.Group, error) {
+	return s.repo.GetAll(checkerId)
 }
 
-func (s *GroupService) GetById(userId, groupId int) (classosbackend.Group, error) {
-	return s.repo.GetById(userId, groupId)
+func (s *GroupService) GetById(checkerId, groupId int) (classosbackend.Group, error) {
+	return s.repo.GetById(checkerId, groupId)
 }
 
-func (s *GroupService) Delete(userId, groupId int) error {
-	return s.repo.Delete(userId, groupId) 
+func (s *GroupService) Delete(checkerId, groupId int) error {
+	return s.repo.Delete(checkerId, groupId) 
 }
 
-func (s *GroupService) Update(userId, groupId int, input classosbackend.UpdateGroupInput) error {
+func (s *GroupService) Update(checkerId, groupId int, input classosbackend.UpdateGroupInput) error {
 	if err := input.Validate(); err != nil {
 		return err
 	}
-	return s.repo.Update(userId, groupId, input)
+	return s.repo.Update(checkerId, groupId, input)
 }

@@ -9,7 +9,7 @@ import (
 )
 
 func (h *Handler) createGroup(c *gin.Context) {
-	userid, err := getUserId(c)
+	checkerId, err := getUserId(c)
 	if err != nil {
 		return
 	}
@@ -20,7 +20,7 @@ func (h *Handler) createGroup(c *gin.Context) {
 		return
 	}
 
-	id, err := h.services.Group.Create(userid, input)
+	id, err := h.services.Group.Create(checkerId, input)
 	if err != nil {
 		newErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
@@ -37,12 +37,12 @@ type getAllGroupsResponse struct {
 }
 
 func (h *Handler) getAllGroups(c *gin.Context) {
-	userid, err := getUserId(c)
+	checkerId, err := getUserId(c)
 	if err != nil {
 		return
 	}
 
-	groups, err := h.services.Group.GetAll(userid)
+	groups, err := h.services.Group.GetAll(checkerId)
 	if err != nil {
 		newErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
@@ -54,7 +54,7 @@ func (h *Handler) getAllGroups(c *gin.Context) {
 }
 
 func (h *Handler) getGroupById(c *gin.Context) {
-	userid, err := getUserId(c)
+	checkerId, err := getUserId(c)
 	if err != nil {
 		return
 	}
@@ -65,7 +65,7 @@ func (h *Handler) getGroupById(c *gin.Context) {
 		return
 	}
 
-	group, err := h.services.Group.GetById(userid, id)
+	group, err := h.services.Group.GetById(checkerId, id)
 	if err != nil {
 		newErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
@@ -76,7 +76,7 @@ func (h *Handler) getGroupById(c *gin.Context) {
 }
 
 func (h *Handler) updateGroup(c *gin.Context) {
-	userid, err := getUserId(c)
+	checkerId, err := getUserId(c)
 	if err != nil {
 		return
 	}
@@ -94,7 +94,7 @@ func (h *Handler) updateGroup(c *gin.Context) {
 	}
 
 
-	if err := h.services.Update(userid, id, input); err != nil {
+	if err := h.services.Group.Update(checkerId, id, input); err != nil {
 		newErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -105,7 +105,7 @@ func (h *Handler) updateGroup(c *gin.Context) {
 }
 
 func (h *Handler) deleteGroup(c *gin.Context) {
-	userid, err := getUserId(c)
+	checkerId, err := getUserId(c)
 	if err != nil {
 		return
 	}
@@ -116,7 +116,7 @@ func (h *Handler) deleteGroup(c *gin.Context) {
 		return
 	}
 
-	err = h.services.Group.Delete(userid, id)
+	err = h.services.Group.Delete(checkerId, id)
 	if err != nil {
 		newErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return

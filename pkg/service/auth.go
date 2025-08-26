@@ -16,7 +16,7 @@ const tokenTTL = 12 * time.Hour
 
 type tokenClaims struct {
 	jwt.StandardClaims
-	UserId int    `json:"user_id"`
+	CheckerId int    `json:"checker_id"`
 	Role   string `json:"role"`
 }
 
@@ -47,7 +47,7 @@ func (s *AuthService) GenerateToken(username, password string) (string, error) {
 			ExpiresAt: time.Now().Add(tokenTTL).Unix(),
 			IssuedAt:  time.Now().Unix(),
 		},
-		UserId: user.ID,
+		CheckerId: user.ID,
 		Role:   user.Role,
 	})
 
@@ -87,7 +87,7 @@ func (s *AuthService) ParseToken(accessToken string) (int, string, error) {
 		return 0, "", errors.New("token claims are not type of *tokenClaims")
 	}
 
-	return claims.UserId, claims.Role, nil
+	return claims.CheckerId, claims.Role, nil
 }
 
 func (s *AuthService) generatePasswordHash(password string) string {

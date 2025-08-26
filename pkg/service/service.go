@@ -12,16 +12,19 @@ type Authorization interface {
 }
 
 type Group interface {
-	Create(userId int, group classosbackend.Group) (int, error)
-	GetAll(userId int) ([]classosbackend.Group, error)
-	GetById(userId, groupId int) (classosbackend.Group, error)
-	Delete(userId, groupId int) error
-	Update(userId, groupId int, input classosbackend.UpdateGroupInput) error
+	Create(checkerId int, group classosbackend.Group) (int, error)
+	GetAll(checkerId int) ([]classosbackend.Group, error)
+	GetById(checkerId, groupId int) (classosbackend.Group, error)
+	Delete(checkerId, groupId int) error
+	Update(checkerId, groupId int, input classosbackend.UpdateGroupInput) error
 }
 
 type User interface {
-	Create(userId, groupId int, user classosbackend.User) (int, error)
-	GetAll(userId, groupId int) ([]classosbackend.User, error)
+	Create(checkerId, groupId int, user classosbackend.User) (int, error)
+	GetAll(checkerId, groupId int) ([]classosbackend.User, error)
+	GetById(checkerId, user_id int) (classosbackend.User, error)
+	Delete(checkerId, user_id int) error
+	Update(checkerId, user_id int, input classosbackend.UpdateUserInput) error
 }
 
 type Service struct {

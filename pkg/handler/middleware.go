@@ -10,7 +10,7 @@ import (
 
 const (
 	authorizationHeader = "Authorization"
-	userCtx = "userId"
+	userCtx = "checkerId"
 )
 
 func (h *Handler) userIdentity(c *gin.Context) {
@@ -26,13 +26,13 @@ func (h *Handler) userIdentity(c *gin.Context) {
 		return
 	}
 
-	userId, role, err := h.services.Authorization.ParseToken(headerParts[1])
+	checkerId, role, err := h.services.Authorization.ParseToken(headerParts[1])
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.Set("userId", userId)
+	c.Set("checkerId", checkerId)
 	c.Set("role", role)
 	c.Next()
 }

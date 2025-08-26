@@ -6,7 +6,6 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	classosbackend "github.com/rinat0880/classOS_backend"
-	"github.com/sirupsen/logrus"
 )
 
 type GroupPostgres struct {
@@ -17,7 +16,7 @@ func NewGroupPostgres(db *sqlx.DB) *GroupPostgres {
 	return &GroupPostgres{db: db}
 }
 
-func (r *GroupPostgres) Create(userId int, group classosbackend.Group) (int, error) {
+func (r *GroupPostgres) Create(checkerId int, group classosbackend.Group) (int, error) {
 	tx, err := r.db.Begin()
 	if err != nil {
 		return 0, err
@@ -36,7 +35,7 @@ func (r *GroupPostgres) Create(userId int, group classosbackend.Group) (int, err
 	//снизу чтобы знать как работать с роллбек и коммитом и екзек
 	//
 	// createUsersListQuery := fmt.Sprintf("sadsadwa")
-	// _, err = tx.Exec(createUsersListQuery, userId, id)
+	// _, err = tx.Exec(createUsersListQuery, checkerId, id)
 	// if err != nil {
 	// 	tx.Rollback()
 	// 	return 0, err
@@ -45,7 +44,7 @@ func (r *GroupPostgres) Create(userId int, group classosbackend.Group) (int, err
 	return id, tx.Commit()
 }
 
-func (r *GroupPostgres) GetAll(userId int) ([]classosbackend.Group, error) {
+func (r *GroupPostgres) GetAll(checkerId int) ([]classosbackend.Group, error) {
 	var groups []classosbackend.Group
 	query := fmt.Sprintf("SELECT id, name FROM %s", groupsTable)
 
@@ -54,7 +53,7 @@ func (r *GroupPostgres) GetAll(userId int) ([]classosbackend.Group, error) {
 	return groups, err
 }
 
-func (r *GroupPostgres) GetById(userId, groupId int) (classosbackend.Group, error) {
+func (r *GroupPostgres) GetById(checkerId, groupId int) (classosbackend.Group, error) {
 	var group classosbackend.Group
 
 	query := fmt.Sprintf("SELECT id, name FROM %s WHERE id = $1", groupsTable)
@@ -64,14 +63,14 @@ func (r *GroupPostgres) GetById(userId, groupId int) (classosbackend.Group, erro
 	return group, err
 }
 
-func (r *GroupPostgres) Delete(userId, groupId int) error {
+func (r *GroupPostgres) Delete(checkerId, groupId int) error {
 	query := fmt.Sprintf("DELETE FROM %s WHERE id = $1", groupsTable)
 	_, err := r.db.Exec(query, groupId)
 
 	return err
 }
 
-func (r *GroupPostgres) Update(userId, groupId int, input classosbackend.UpdateGroupInput) error {
+func (r *GroupPostgres) Update(checkerId, groupId int, input classosbackend.UpdateGroupInput) error {
 	setValues := make([]string, 0)
 	args := make([]interface{}, 0)
 	argId := 1
@@ -86,9 +85,6 @@ func (r *GroupPostgres) Update(userId, groupId int, input classosbackend.UpdateG
 	
 	query := fmt.Sprintf("UPDATE %s Set %s Where id = $%d", groupsTable, setQuery, argId)
 	args = append(args, groupId)
-
-	logrus.Debugf("updateQuery: %s", query)
-	logrus.Debugf("args: %s", args)
 
 	_, err := r.db.Exec(query, args...)
 	return err

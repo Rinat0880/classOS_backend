@@ -9,7 +9,7 @@ import (
 )
 
 func (h *Handler) createUser(c *gin.Context) {
-	userId, err := getUserId(c)
+	checkerId, err := getUserId(c)
 	if err != nil {
 		return
 	}
@@ -26,7 +26,7 @@ func (h *Handler) createUser(c *gin.Context) {
 		return
 	}
 
-	id, err := h.services.User.Create(userId, groupId, input)
+	id, err := h.services.User.Create(checkerId, groupId, input)
 	if err != nil {
 		newErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
@@ -38,7 +38,7 @@ func (h *Handler) createUser(c *gin.Context) {
 }
 
 func (h *Handler) getAllUsers(c *gin.Context) {
-	userId, err := getUserId(c)
+	checkerId, err := getUserId(c)
 	if err != nil {
 		return
 	}
@@ -49,7 +49,7 @@ func (h *Handler) getAllUsers(c *gin.Context) {
 		return
 	}
 
-	users, err := h.services.User.GetAll(userId, groupId)
+	users, err := h.services.User.GetAll(checkerId, groupId)
 	if err != nil {
 		newErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
@@ -59,7 +59,7 @@ func (h *Handler) getAllUsers(c *gin.Context) {
 }
 
 func (h *Handler) getUserById(c *gin.Context) {
-	userId, err := getUserId(c)
+	checkerId, err := getUserId(c)
 	if err != nil {
 		return
 	}
@@ -70,19 +70,61 @@ func (h *Handler) getUserById(c *gin.Context) {
 		return
 	}
 
-	users, err := h.services.User.GetAll(userId, user_id)
+	user, err := h.services.User.GetById(checkerId, user_id)
 	if err != nil {
 		newErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	c.JSON(http.StatusOK, users)
+	c.JSON(http.StatusOK, user)
 }
 
 func (h *Handler) updateUser(c *gin.Context) {
+	checkerId, err := getUserId(c)
+	if err != nil {
+		return
+	}
 
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		newErrorResponse(c, http.StatusBadRequest, "invalid id in params")
+		return
+	}
+
+	var input classosbackend.UpdateUserInput
+	if err := c.BindJSON(&input); err != nil {
+		newErrorResponse(c, http.StatusBadRequest, err.Error())
+		return
+	}
+
+
+	if err := h.services.User.Update(checkerId, id, input); err != nil {
+		newErrorResponse(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	c.JSON(http.StatusOK, statusResponse{
+		Status: "Ok",
+	})
 }
 
 func (h *Handler) deleteUser(c *gin.Context) {
+	checkerId, err := getUserId(c)
+	if err != nil {
+		return
+	}
 
+	user_id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		newErrorResponse(c, http.StatusBadRequest, "invalid id in params")
+		return
+	}
+
+	err = h.services.User.Delete(checkerId, user_id)
+	if err != nil {
+		newErrorResponse(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	c.JSON(http.StatusOK, statusResponse{"ok"})
 }
