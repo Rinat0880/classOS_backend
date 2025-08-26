@@ -37,12 +37,6 @@ func NewAuthService(repo repository.Authorization) *AuthService {
 }
 
 func (s *AuthService) GenerateToken(username, password string) (string, error) {
-	fmt.Printf("AUTH_salt from env: '%s'\n", os.Getenv("AUTH_salt"))
-	fmt.Printf("AUTH_signingKey from env: '%s'\n", os.Getenv("AUTH_signingKey"))
-
-	hashedPassword := s.generatePasswordHash(password)
-	fmt.Printf("Trying to find user with username: %s and hash: %s\n", username, hashedPassword)
-
 	user, err := s.repo.GetUser(username, s.generatePasswordHash(password))
 	if err != nil {
 		return "", err
@@ -99,13 +93,8 @@ func (s *AuthService) ParseToken(accessToken string) (int, string, error) {
 func (s *AuthService) generatePasswordHash(password string) string {
 	hash := sha1.New()
 	hash.Write([]byte(password))
-
 	salt := getSalt()
-	fmt.Printf("Using salt: '%s'\n", salt) // добавьте эту строку
-	fmt.Printf("Password: '%s'\n", password) // и эту
-	
 	result := fmt.Sprintf("%x", hash.Sum([]byte(salt)))
-	fmt.Printf("Generated hash: %s\n", result) // и эту
 	
 	return result
 }

@@ -35,8 +35,6 @@ func (s *UserService) GetAll(userId, groupId int) ([]classosbackend.User, error)
 func (s *UserService) generatePasswordHash(password string) string {
 	hash := sha1.New()
 	hash.Write([]byte(password))
-
 	salt := getSalt()
-
 	return fmt.Sprintf("%x", hash.Sum([]byte(salt)))
 }

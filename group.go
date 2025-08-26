@@ -13,7 +13,7 @@ type Group struct {
 type WhitelistEntry struct {
 	ID        int64     `json:"id"`
 	GroupID   int64     `json:"group_id"`
-	Value     string    `json:"value"` // Например, IP или email
+	Value     string    `json:"value"`
 	CreatedAt time.Time `json:"created_at"`
 }
 
