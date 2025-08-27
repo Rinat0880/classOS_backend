@@ -40,23 +40,40 @@ func main() {
 	}
 
 	repos := repository.NewRepository(db)
-	services := service.NewService(repos)
+
+	adService := service.NewADService()
+	if err := adService.TestConnection(); err != nil {
+		logrus.Printf("Warning: AD connection failed: %v", err)
+		logrus.Printf("Application will work in DB-only mode")
+	} else {
+		logrus.Println("AD connection established successfully")
+	}
+
+	authService := service.NewAuthService(repos.Authorization)
+	integratedUserService := service.NewIntegratedUserService(repos.User, repos.Group, authService, adService)
+
+	services := &service.Service{
+		Authorization: authService,
+		Group:         service.NewGroupService(repos.Group),
+		User:          integratedUserService,
+	}
+
 	handlers := handler.NewHandler(services)
 
 	srv := new(classosbackend.Server)
-	go func () {
+	go func() {
 		if err := srv.Run(viper.GetString("port"), handlers.InitRoutes()); err != nil {
-		logrus.Fatalf("error occured while running server: %s", err.Error())
-	}
+			logrus.Fatalf("error occured while running server: %s", err.Error())
+		}
 	}()
 
 	logrus.Print("classOS_backend started")
 
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGTERM, syscall.SIGINT)
-	<- quit
+	<-quit
 
-	logrus.Print("classOS_backend started")
+	logrus.Print("classOS_backend shutting down")
 
 	if err := srv.Shutdown(context.Background()); err != nil {
 		logrus.Errorf("error occured on server shutting down: %s", err.Error())

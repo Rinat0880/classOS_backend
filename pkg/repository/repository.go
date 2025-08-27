@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"database/sql"
 	"github.com/jmoiron/sqlx"
 	classosbackend "github.com/rinat0880/classOS_backend"
 )
@@ -16,14 +17,26 @@ type Group interface {
 	GetById(checkerId, groupId int) (classosbackend.Group, error)
 	Delete(checkerId, groupId int) error
 	Update(checkerId, groupId int, input classosbackend.UpdateGroupInput) error
+	
+	// Методы для транзакций
+	BeginTransaction() (*sql.Tx, error)
+	CreateWithTx(tx *sql.Tx, checkerId int, group classosbackend.Group) (int, error)
+	UpdateWithTx(tx *sql.Tx, checkerId, groupId int, input classosbackend.UpdateGroupInput) error
+	DeleteWithTx(tx *sql.Tx, checkerId, groupId int) error
 }
 
 type User interface {
 	Create(groupId int, user classosbackend.User) (int, error)
 	GetAll(checkerId, groupId int) ([]classosbackend.User, error)
-	GetById(checkerId, user_id int) (classosbackend.User, error)
-	Delete(checkerId, user_id int) error
-	Update(checkerId, user_id int, input classosbackend.UpdateUserInput) error
+	GetById(checkerId, userId int) (classosbackend.User, error)
+	Delete(checkerId, userId int) error
+	Update(checkerId, userId int, input classosbackend.UpdateUserInput) error
+	
+	// Методы для транзакций
+	BeginTransaction() (*sql.Tx, error)
+	CreateWithTx(tx *sql.Tx, groupId int, user classosbackend.User) (int, error)
+	UpdateWithTx(tx *sql.Tx, checkerId, userId int, input classosbackend.UpdateUserInput) error
+	DeleteWithTx(tx *sql.Tx, checkerId, userId int) error
 }
 
 type Repository struct {
@@ -35,7 +48,7 @@ type Repository struct {
 func NewRepository(db *sqlx.DB) *Repository {
 	return &Repository{
 		Authorization: NewAuthPostgres(db),
-		Group: NewGroupPostgres(db),
-		User: NewUserPostgres(db),
+		Group:         NewGroupPostgres(db),
+		User:          NewUserPostgres(db),
 	}
 }

@@ -128,3 +128,38 @@ func (h *Handler) deleteUser(c *gin.Context) {
 
 	c.JSON(http.StatusOK, statusResponse{"ok"})
 }
+
+func (h *Handler) changePassword(c *gin.Context) {
+	checkerId, err := getUserId(c)
+	if err != nil {
+		return
+	}
+
+	userId, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		newErrorResponse(c, http.StatusBadRequest, "invalid id in params")
+		return
+	}
+
+	var input struct {
+		NewPassword string `json:"new_password" binding:"required,min=8"`
+	}
+
+	if err := c.BindJSON(&input); err != nil {
+		newErrorResponse(c, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	updateInput := classosbackend.UpdateUserInput{
+		Password: &input.NewPassword,
+	}
+
+	if err := h.services.User.Update(checkerId, userId, updateInput); err != nil {
+		newErrorResponse(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	c.JSON(http.StatusOK, statusResponse{
+		Status: "Password changed successfully",
+	})
+}

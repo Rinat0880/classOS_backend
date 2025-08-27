@@ -1,3 +1,4 @@
+// pkg/handler/handler.go - обновленные роуты
 package handler
 
 import (
@@ -32,11 +33,6 @@ func (h *Handler) InitRoutes() *gin.Engine {
 			groups.PATCH("/:id", h.updateGroup)
 			groups.DELETE("/:id", h.deleteGroup)
 
-			// policies := groups.Group("/:id/policy")
-			// {
-			// 	policies.GET("/")
-			// 	policies.PATCH("/")
-			// }
 			users := groups.Group(":id/users")
 			{
 				users.GET("/", h.getAllUsers)
@@ -49,15 +45,19 @@ func (h *Handler) InitRoutes() *gin.Engine {
 			users.GET("/:id", h.getUserById)
 			users.PATCH("/:id", h.updateUser)
 			users.DELETE("/:id", h.deleteUser)
+			users.POST("/:id/password", h.changePassword)
 		}
 
-		// whitelist := api.Group("/whitelist")
-		// {
-		// 	whitelist.GET("/")
-		// 	whitelist.POST("/")
-		// 	whitelist.PATCH("/:id")
-		// 	whitelist.DELETE("/:id")
-		// }
+		// AD административные функции
+		admin := api.Group("/admin")
+		{
+			admin.POST("/sync", h.syncFromAD)
+			admin.GET("/ad/status", h.checkADConnection)
+		}
 	}
 	return router
 }
+
+// Новые методы для работы с AD
+
+

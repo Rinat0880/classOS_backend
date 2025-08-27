@@ -9,6 +9,7 @@ type Authorization interface {
 	CreateUser(user classosbackend.User) (int, error)
 	GenerateToken(username, password string) (string, error)
 	ParseToken(token string) (int, string, error)
+	GeneratePasswordHash(password string) string
 }
 
 type Group interface {
@@ -22,9 +23,9 @@ type Group interface {
 type User interface {
 	Create(checkerId, groupId int, user classosbackend.User) (int, error)
 	GetAll(checkerId, groupId int) ([]classosbackend.User, error)
-	GetById(checkerId, user_id int) (classosbackend.User, error)
-	Delete(checkerId, user_id int) error
-	Update(checkerId, user_id int, input classosbackend.UpdateUserInput) error
+	GetById(checkerId, userId int) (classosbackend.User, error)
+	Delete(checkerId, userId int) error
+	Update(checkerId, userId int, input classosbackend.UpdateUserInput) error
 }
 
 type Service struct {
@@ -34,9 +35,12 @@ type Service struct {
 }
 
 func NewService(repos *repository.Repository) *Service {
+	adService := NewADService()
+	authService := NewAuthService(repos.Authorization)
+
 	return &Service{
-		Authorization: NewAuthService(repos.Authorization),
-		Group: NewGroupService(repos.Group),
-		User: NewUserService(repos.User, repos.Group),
+		Authorization: authService,
+		Group:         NewIntegratedGroupService(repos.Group, adService),
+		User:          NewIntegratedUserService(repos.User, repos.Group, authService, adService),
 	}
 }
