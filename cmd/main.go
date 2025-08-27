@@ -24,7 +24,7 @@ func main() {
 	}
 
 	if err := godotenv.Load(); err != nil {
-		logrus.Fatalf("error loading env vars: %s", err.Error())
+	    logrus.Printf("Warning: No .env file found: %v (using environment variables)", err)
 	}
 
 	db, err := repository.NewPostgresDB(repository.Config{

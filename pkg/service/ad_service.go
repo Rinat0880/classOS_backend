@@ -7,6 +7,7 @@ import (
 	"os/exec"
 	"strings"
 	"errors"
+	"runtime"
 )
 
 type ADUser struct {
@@ -154,7 +155,6 @@ func (ads *ADService) SyncAllUsersFromAD() error {
 		return err
 	}
 
-	// Здесь будет логика синхронизации с БД
 	fmt.Printf("Synced %d users from AD\n", len(adUsers))
 	return nil
 }
@@ -165,9 +165,20 @@ func (ads *ADService) TestConnection() error {
 	return err
 }
 
+// КЛЮЧЕВАЯ ФУНКЦИЯ: Выполнение PowerShell на хосте
 func (ads *ADService) executePowerShellCommand(command string) ([]byte, error) {
 	fullCommand := fmt.Sprintf(`Import-Module ActiveDirectory; %s`, command)
-	cmd := exec.Command("powershell", "-NoProfile", "-Command", fullCommand)
+	
+	var cmd *exec.Cmd
+	
+	// Определяем как запускать PowerShell в зависимости от окружения
+	if ads.isRunningInContainer() {
+		// В контейнере на Windows Server - вызываем PowerShell хоста
+		cmd = ads.createHostPowerShellCommand(fullCommand)
+	} else {
+		// Запуск напрямую на хосте
+		cmd = exec.Command("powershell", "-NoProfile", "-Command", fullCommand)
+	}
 	
 	output, err := cmd.CombinedOutput()
 	if err != nil {
@@ -175,4 +186,39 @@ func (ads *ADService) executePowerShellCommand(command string) ([]byte, error) {
 	}
 
 	return output, nil
+}
+
+// Проверяем запущены ли мы в контейнере
+func (ads *ADService) isRunningInContainer() bool {
+	// Проверяем наличие /.dockerenv файла или cgroup
+	if _, err := os.Stat("/.dockerenv"); err == nil {
+		return true
+	}
+	
+	// Дополнительная проверка через cgroup (для Linux контейнеров)
+	if runtime.GOOS == "linux" {
+		if cgroup, err := os.ReadFile("/proc/1/cgroup"); err == nil {
+			return strings.Contains(string(cgroup), "docker") || strings.Contains(string(cgroup), "containerd")
+		}
+	}
+	
+	return false
+}
+
+// Создаем команду для вызова PowerShell на хосте из контейнера
+func (ads *ADService) createHostPowerShellCommand(command string) *exec.Cmd {
+	// На Windows Server с Docker Desktop можно вызывать команды хоста
+	// через специальные механизмы
+	
+	if runtime.GOOS == "windows" {
+		// Прямой вызов PowerShell (если доступен в контейнере Windows)
+		return exec.Command("powershell", "-NoProfile", "-Command", command)
+	} else {
+		// В Linux контейнере на Windows хосте используем docker exec
+		// для вызова команд на хосте (это требует специальной настройки)
+		return exec.Command("docker", "run", "--rm", 
+			"-v", "//var/run/docker.sock:/var/run/docker.sock",
+			"mcr.microsoft.com/windows/servercore:ltsc2022",
+			"powershell", "-NoProfile", "-Command", command)
+	}
 }
