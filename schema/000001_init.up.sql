@@ -37,7 +37,6 @@ VALUES (
 )
 ON CONFLICT (username) DO NOTHING;
 
-
 CREATE OR REPLACE FUNCTION prevent_superadmin_delete()
 RETURNS trigger AS $$
 BEGIN
@@ -48,7 +47,6 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-DROP TRIGGER IF EXISTS trg_prevent_superadmin_delete ON users;
 CREATE TRIGGER trg_prevent_superadmin_delete
 BEFORE DELETE ON users
 FOR EACH ROW EXECUTE FUNCTION prevent_superadmin_delete();
@@ -56,14 +54,13 @@ FOR EACH ROW EXECUTE FUNCTION prevent_superadmin_delete();
 CREATE OR REPLACE FUNCTION prevent_superadmin_update()
 RETURNS trigger AS $$
 BEGIN
-    IF OLD.username = 'admin01' AND NEW.role <> 'admin01' THEN
+    IF OLD.username = 'admin01' AND NEW.role <> 'admin' THEN
         RAISE EXCEPTION 'Нельзя изменить роль суперадмина';
     END IF;
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
-DROP TRIGGER IF EXISTS trg_prevent_superadmin_update ON users;
 CREATE TRIGGER trg_prevent_superadmin_update
 BEFORE UPDATE ON users
 FOR EACH ROW EXECUTE FUNCTION prevent_superadmin_update();

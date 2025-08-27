@@ -8,11 +8,12 @@ services:
       POSTGRES_DB: postgres
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8"
     ports:
       - "5435:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./schema:/docker-entrypoint-initdb.d
+      - ./schema/000001_init.up.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
     networks:
       - classos_network
     restart: unless-stopped
@@ -27,8 +28,14 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: classos_app
-    env_file:
-      - .env
+    environment:
+      - DB_PASSWORD=${DB_PASSWORD}
+      - AUTH_signingKey=${AUTH_signingKey}
+      - AUTH_salt=${AUTH_salt}
+      - AD_DOMAIN=${AD_DOMAIN:-}
+      - AD_USERNAME=${AD_USERNAME:-}
+      - AD_PASSWORD=${AD_PASSWORD:-}
+      - AD_BASE_OU=${AD_BASE_OU:-}
     ports:
       - "8000:8000"
     depends_on:

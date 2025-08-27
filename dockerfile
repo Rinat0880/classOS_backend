@@ -19,6 +19,7 @@ WORKDIR /app
 
 COPY --from=builder /app/main .
 COPY --from=builder /app/configs ./configs
+COPY --from=builder /app/.env .env* ./
 
 RUN chown -R appuser:appuser /app
 
