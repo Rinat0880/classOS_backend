@@ -9,7 +9,7 @@ COPY . .
 
 RUN CGO_ENABLED=0 GOOS=linux go build -o main cmd/main.go
 
-RUN CGO_ENABLED=0 GOOS=linux go build -o test-ldap cmd/test-ldap/main.go
+RUN CGO_ENABLED=0 GOOS=linux go build -o test-ldap cmd/ldap-test/main.go
 
 FROM alpine:3.19
 
