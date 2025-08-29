@@ -32,10 +32,13 @@ services:
       - DB_PASSWORD=${DB_PASSWORD}
       - AUTH_signingKey=${AUTH_signingKey}
       - AUTH_salt=${AUTH_salt}
-      - AD_DOMAIN=${AD_DOMAIN:-}
-      - AD_USERNAME=${AD_USERNAME:-}
-      - AD_PASSWORD=${AD_PASSWORD:-}
-      - AD_BASE_OU=${AD_BASE_OU:-}
+      # LDAP настройки для AD
+      - AD_HOST=${AD_HOST:-host.docker.internal}
+      - AD_PORT=${AD_PORT:-636}
+      - AD_BASE_DN=${AD_BASE_DN:-}
+      - AD_BIND_USER=${AD_BIND_USER:-}
+      - AD_BIND_PASS=${AD_BIND_PASS:-}
+      - AD_USE_TLS=${AD_USE_TLS:-true}
     ports:
       - "8000:8000"
     depends_on:
@@ -46,8 +49,10 @@ services:
     restart: unless-stopped
     volumes:
       - ./configs/config.yml:/app/configs/config.yml:ro
+      # - ./certs/ad-ca.crt:/usr/local/share/ca-certificates/ad-ca.crt:ro
       
-    privileged: true  
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
@@ -55,6 +60,26 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
+
+  ldap_test:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: classos_ldap_test
+    environment:
+      - AD_HOST=${AD_HOST:-host.docker.internal}
+      - AD_PORT=${AD_PORT:-636}
+      - AD_BASE_DN=${AD_BASE_DN:-}
+      - AD_BIND_USER=${AD_BIND_USER:-}
+      - AD_BIND_PASS=${AD_BIND_PASS:-}
+      - AD_USE_TLS=${AD_USE_TLS:-true}
+    networks:
+      - classos_network
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    command: ["./minimal-ldap-test"]
+    profiles:
+      - test
 
 networks:
   classos_network:

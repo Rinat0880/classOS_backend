@@ -1,7 +1,10 @@
 package main
 
 import (
+	"context"
 	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
@@ -21,7 +24,7 @@ func main() {
 	}
 
 	if err := godotenv.Load(); err != nil {
-	    logrus.Printf("Warning: No .env file found: %v (using environment variables)", err)
+		logrus.Printf("Warning: No .env file found: %v (using environment variables)", err)
 	}
 
 	db, err := repository.NewPostgresDB(repository.Config{
