@@ -84,8 +84,9 @@ func (ads *ADService) connect() (*ldap.Conn, error) {
 	if ads.useTLS {
 		// LDAPS соединение
 		conn, err = ldap.DialTLS("tcp", address, &tls.Config{
-			ServerName:         ads.host,
-			InsecureSkipVerify: true, // в продакшене должно быть false
+			InsecureSkipVerify: true,
+			MinVersion:         tls.VersionTLS10,
+			MaxVersion:         tls.VersionTLS12,
 		})
 	} else {
 		// Обычное LDAP соединение
