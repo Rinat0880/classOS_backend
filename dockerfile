@@ -24,7 +24,9 @@ COPY --from=builder /app/test-ldap .
 COPY --from=builder /app/configs ./configs
 COPY --from=builder /app/.env .env* ./
 
-RUN mkdir -p /usr/local/share/ca-certificates/
+COPY certs/ad-ca.crt /usr/local/share/ca-certificates/ad-ca.crt
+
+RUN update-ca-certificates
 
 RUN chown -R appuser:appuser /app
 

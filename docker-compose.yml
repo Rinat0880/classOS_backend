@@ -49,7 +49,7 @@ services:
     restart: unless-stopped
     volumes:
       - ./configs/config.yml:/app/configs/config.yml:ro
-      # - ./certs/ad-ca.crt:/usr/local/share/ca-certificates/ad-ca.crt:ro
+      - ./certs/ad-ca.crt:/usr/local/share/ca-certificates/ad-ca.crt:ro
       
     extra_hosts:
       - "host.docker.internal:host-gateway"
