@@ -52,7 +52,7 @@ services:
       - ./certs/ad-ca.crt:/usr/local/share/ca-certificates/ad-ca.crt:ro
       
     extra_hosts:
-      - "host.docker.internal:host-gateway"
+      - "win-g32prphu8us.school.local:172.16.214.131"
     
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
