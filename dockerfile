@@ -24,7 +24,7 @@ COPY --from=builder /app/test-ldap .
 COPY --from=builder /app/configs ./configs
 COPY --from=builder /app/.env .env* ./
 
-COPY certs/ad-ca.crt /usr/local/share/ca-certificates/ad-ca.crt
+COPY certs/ad-ca.cer /usr/local/share/ca-certificates/ad-ca.cer
 
 RUN update-ca-certificates
 
