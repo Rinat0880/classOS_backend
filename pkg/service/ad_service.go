@@ -81,17 +81,10 @@ func (ads *ADService) connect() (*ldap.Conn, error) {
 
 	address := fmt.Sprintf("%s:%s", ads.host, ads.port)
 
-	if ads.useTLS {
-		// LDAPS соединение
-		conn, err = ldap.DialTLS("tcp", address, &tls.Config{
-			InsecureSkipVerify: true,
-			MinVersion:         tls.VersionTLS10,
-			MaxVersion:         tls.VersionTLS12,
-		})
-	} else {
-		// Обычное LDAP соединение
-		conn, err = ldap.Dial("tcp", address)
-	}
+	// LDAPS соединение
+	conn, err = ldap.DialTLS("tcp", address, &tls.Config{
+		InsecureSkipVerify: false,
+	})
 
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to AD: %w", err)
@@ -100,7 +93,7 @@ func (ads *ADService) connect() (*ldap.Conn, error) {
 	// Авторизация
 	if err := conn.Bind(ads.bindUser, ads.bindPass); err != nil {
 		conn.Close()
-		return nil, fmt.Errorf("failed to bind to AD: %w", err)
+		return nil, fmt.Errorf("failed to bind user(%s) to AD: %w", ads.bindUser, err)
 	}
 
 	return conn, nil
@@ -139,6 +132,39 @@ func (ads *ADService) TestConnection() error {
 	}
 
 	logrus.Info("AD connection test successful")
+	return nil
+}
+
+func (ads *ADService) CreateGroup(group ADGroup) error {
+	if !ads.enabled {
+		return fmt.Errorf("AD service is not enabled")
+	}
+
+	conn, err := ads.connect()
+	if err != nil {
+		return err
+	}
+	defer conn.Close()
+
+	groupDN := fmt.Sprintf("CN=%s, ou=Groups, %s", group.Name, ads.baseDN)
+
+	logrus.WithFields(logrus.Fields{
+		"groupDN": groupDN,
+	}).Info("Creating AD group")
+
+	addReq := ldap.NewAddRequest(groupDN, []ldap.Control{})
+
+	addReq.Attribute("objectClass", []string{"top", "group"})
+	addReq.Attribute("name", []string{group.Name})
+	addReq.Attribute("sAMAccountName", []string{group.Name})
+	addReq.Attribute("instanceType", []string{fmt.Sprintf("%d", 0x00000004)})
+	addReq.Attribute("groupType", []string{fmt.Sprintf("%d", 0x00000004 | 0x80000000)})
+
+	if err := conn.Add(addReq); err != nil {
+	    return fmt.Errorf("failed to create group in AD: %w", err)
+	}
+	
+	logrus.WithField("groupDN", groupDN).Info("AD group created successfully")
 	return nil
 }
 
@@ -372,39 +398,39 @@ func (ads *ADService) findUserDN(conn *ldap.Conn, username string) (string, erro
 }
 
 // Создает группу в AD
-func (ads *ADService) CreateGroup(group ADGroup) error {
-	if !ads.enabled {
-		return fmt.Errorf("AD service is disabled")
-	}
+// func (ads *ADService) CreateGroup(group ADGroup) error {
+// 	if !ads.enabled {
+// 		return fmt.Errorf("AD service is disabled")
+// 	}
 
-	conn, err := ads.connect()
-	if err != nil {
-		return err
-	}
-	defer conn.Close()
+// 	conn, err := ads.connect()
+// 	if err != nil {
+// 		return err
+// 	}
+// 	defer conn.Close()
 
-	// Формируем DN группы
-	groupDN := fmt.Sprintf("CN=%s,OU=Groups,OU=Managed,%s", group.Name, ads.baseDN)
+// 	// Формируем DN группы
+// 	groupDN := fmt.Sprintf("CN=%s,OU=Groups,OU=Managed,%s", group.Name, ads.baseDN)
 
-	logrus.WithField("groupDN", groupDN).Info("Creating AD group")
+// 	logrus.WithField("groupDN", groupDN).Info("Creating AD group")
 
-	addRequest := ldap.NewAddRequest(groupDN, nil)
-	addRequest.Attribute("objectClass", []string{"top", "group"})
-	addRequest.Attribute("cn", []string{group.Name})
-	addRequest.Attribute("sAMAccountName", []string{group.Name})
-	addRequest.Attribute("groupType", []string{"-2147483646"}) // Global security group
+// 	addRequest := ldap.NewAddRequest(groupDN, nil)
+// 	addRequest.Attribute("objectClass", []string{"top", "group"})
+// 	addRequest.Attribute("cn", []string{group.Name})
+// 	addRequest.Attribute("sAMAccountName", []string{group.Name})
+// 	addRequest.Attribute("groupType", []string{"-2147483646"}) // Global security group
 
-	if group.Description != "" {
-		addRequest.Attribute("description", []string{group.Description})
-	}
+// 	if group.Description != "" {
+// 		addRequest.Attribute("description", []string{group.Description})
+// 	}
 
-	if err := conn.Add(addRequest); err != nil {
-		return fmt.Errorf("failed to create group in AD: %w", err)
-	}
+// 	if err := conn.Add(addRequest); err != nil {
+// 		return fmt.Errorf("failed to create group in AD: %w", err)
+// 	}
 
-	logrus.WithField("groupDN", groupDN).Info("AD group created successfully")
-	return nil
-}
+// 	logrus.WithField("groupDN", groupDN).Info("AD group created successfully")
+// 	return nil
+// }
 
 // Обновляет группу в AD
 func (ads *ADService) UpdateGroup(groupName string, updates ADGroup) error {
