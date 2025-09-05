@@ -54,7 +54,7 @@ func main() {
 
 	services := &service.Service{
 		Authorization: authService,
-		Group:         service.NewGroupService(repos.Group),
+		Group: service.NewIntegratedGroupService(repos.Group, adService),
 		User:          integratedUserService,
 	}
 
