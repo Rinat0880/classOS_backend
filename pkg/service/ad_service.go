@@ -194,17 +194,25 @@ func (ads *ADService) CreateUser(user ADUser, password string) error {
 	}).Info("Creating AD user")
 
 	// Создаем пользователя (сначала disabled)
-	addRequest := ldap.NewAddRequest(userDN, nil)
-	addRequest.Attribute("objectClass", []string{"top", "person", "organizationalPerson", "user"})
+	// addRequest := ldap.NewAddRequest(userDN, []ldap.Control{})
+	// addRequest.Attribute("objectClass", []string{"top", "organizationalPerson", "user", "person"})
+	// addRequest.Attribute("cn", []string{user.DisplayName})
+	// addRequest.Attribute("sn", []string{user.DisplayName}) // фамилия
+	// addRequest.Attribute("displayName", []string{user.DisplayName})
+	// addRequest.Attribute("sAMAccountName", []string{user.SamAccountName})
+	// addRequest.Attribute("userPrincipalName", []string{user.UserPrincipalName})
+	// addRequest.Attribute("userAccountControl", []string{"514"}) // disabled account
+
+	addRequest := ldap.NewAddRequest(userDN, []ldap.Control{})
+	addRequest.Attribute("objectClass", []string{"top", "organizationalPerson", "user", "person"})
 	addRequest.Attribute("cn", []string{user.DisplayName})
-	addRequest.Attribute("sn", []string{user.DisplayName}) // фамилия
-	addRequest.Attribute("displayName", []string{user.DisplayName})
+	addRequest.Attribute("sn", []string{user.DisplayName})
 	addRequest.Attribute("sAMAccountName", []string{user.SamAccountName})
+	addRequest.Attribute("userAccountControl", []string{fmt.Sprintf("%d", 0x0202)})
 	addRequest.Attribute("userPrincipalName", []string{user.UserPrincipalName})
-	addRequest.Attribute("userAccountControl", []string{"514"}) // disabled account
 
 	if err := conn.Add(addRequest); err != nil {
-		return fmt.Errorf("failed to create user in AD: %w", err)
+	    return fmt.Errorf("failed to create user in AD: %w", err)
 	}
 
 	// Устанавливаем пароль
