@@ -148,7 +148,7 @@ func (ads *ADService) CreateGroup(group ADGroup) error {
 
 	fmt.Print("user: ",ads.bindUser,"|  pswrd: ", ads.bindPass, "|  baseDN: ", ads.baseDN)
 
-	groupDN := fmt.Sprintf("CN=%s, %s", group.Name, ads.baseDN)
+	groupDN := fmt.Sprintf("CN=%s, OU=classos_groups, %s", group.Name, ads.baseDN)
 
 	logrus.WithFields(logrus.Fields{
 		"groupDN": groupDN,
@@ -186,7 +186,7 @@ func (ads *ADService) CreateUser(user ADUser, password string) error {
 
 
 	// Формируем DN пользователя
-	userDN := fmt.Sprintf("CN=%s,%s", user.DisplayName, ads.baseDN)
+	userDN := fmt.Sprintf("CN=%s, OU=classos_users, %s", user.DisplayName, ads.baseDN)
 
 	logrus.WithFields(logrus.Fields{
 		"userDN": userDN,
@@ -204,12 +204,15 @@ func (ads *ADService) CreateUser(user ADUser, password string) error {
 	// addRequest.Attribute("userAccountControl", []string{"514"}) // disabled account
 
 	addRequest := ldap.NewAddRequest(userDN, []ldap.Control{})
-	addRequest.Attribute("objectClass", []string{"top", "organizationalPerson", "user", "person"})
+	addRequest.Attribute("objectClass", []string{"top", "person", "organizationalPerson", "user"})
 	addRequest.Attribute("cn", []string{user.DisplayName})
-	addRequest.Attribute("sn", []string{user.DisplayName})
+	addRequest.Attribute("sn", []string{"User"}) 
+	addRequest.Attribute("displayName", []string{user.DisplayName})
 	addRequest.Attribute("sAMAccountName", []string{user.SamAccountName})
-	addRequest.Attribute("userAccountControl", []string{fmt.Sprintf("%d", 0x0202)})
-	addRequest.Attribute("userPrincipalName", []string{user.UserPrincipalName})
+	addRequest.Attribute("userPrincipalName", []string{
+	    fmt.Sprintf("%s@school.local", user.SamAccountName),
+	})
+	addRequest.Attribute("userAccountControl", []string{"514"}) 
 
 	if err := conn.Add(addRequest); err != nil {
 	    return fmt.Errorf("failed to create user in AD: %w", err)
