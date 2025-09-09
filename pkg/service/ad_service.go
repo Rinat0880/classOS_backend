@@ -146,7 +146,9 @@ func (ads *ADService) CreateGroup(group ADGroup) error {
 	}
 	defer conn.Close()
 
-	groupDN := fmt.Sprintf("CN=%s, ou=Groups, %s", group.Name, ads.baseDN)
+	fmt.Print("user: ",ads.bindUser,"|  pswrd: ", ads.bindPass, "|  baseDN: ", ads.baseDN)
+
+	groupDN := fmt.Sprintf("CN=%s, %s", group.Name, ads.baseDN)
 
 	logrus.WithFields(logrus.Fields{
 		"groupDN": groupDN,
@@ -180,8 +182,11 @@ func (ads *ADService) CreateUser(user ADUser, password string) error {
 	}
 	defer conn.Close()
 
+	fmt.Print("user: ",ads.bindUser,"|  pswrd: ", ads.bindPass, "|  baseDN: ", ads.baseDN)
+
+
 	// Формируем DN пользователя
-	userDN := fmt.Sprintf("CN=%s,OU=Users,OU=Managed,%s", user.DisplayName, ads.baseDN)
+	userDN := fmt.Sprintf("CN=%s,%s", user.DisplayName, ads.baseDN)
 
 	logrus.WithFields(logrus.Fields{
 		"userDN": userDN,
@@ -410,7 +415,7 @@ func (ads *ADService) findUserDN(conn *ldap.Conn, username string) (string, erro
 // 	defer conn.Close()
 
 // 	// Формируем DN группы
-// 	groupDN := fmt.Sprintf("CN=%s,OU=Groups,OU=Managed,%s", group.Name, ads.baseDN)
+// 	groupDN := fmt.Sprintf("CN=%s, %s", group.Name, ads.baseDN)
 
 // 	logrus.WithField("groupDN", groupDN).Info("Creating AD group")
 
@@ -612,7 +617,7 @@ func (ads *ADService) GetAllUsers() ([]ADUser, error) {
 	defer conn.Close()
 
 	searchRequest := ldap.NewSearchRequest(
-		fmt.Sprintf("OU=Users,OU=Managed,%s", ads.baseDN),
+		ads.baseDN,
 		ldap.ScopeWholeSubtree,
 		ldap.NeverDerefAliases,
 		0, 0, false,
