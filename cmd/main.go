@@ -54,23 +54,32 @@ func main() {
 
 	services := &service.Service{
 		Authorization: authService,
-		Group: service.NewIntegratedGroupService(repos.Group, adService),
+		Group:         service.NewIntegratedGroupService(repos.Group, adService),
 		User:          integratedUserService,
 	}
 
 	handlers := handler.NewHandler(services)
 
-	srv := new(classosbackend.Server)
-	if err := srv.Run(viper.GetString("port"), handlers.InitRoutes()); err != nil {
-		logrus.Fatalf("error occured while running server: %s", err.Error())
+	host := viper.GetString("host")
+	if host == "" {
+		host = "localhost" 
 	}
+
+	port := viper.GetString("port")
+	if port == "" {
+		port = "8080" 
+	}
+
+	address := host + ":" + port
+
+	srv := new(classosbackend.Server)
 	go func() {
-		if err := srv.Run(viper.GetString("port"), handlers.InitRoutes()); err != nil {
+		if err := srv.Run(address, handlers.InitRoutes()); err != nil {
 			logrus.Fatalf("error occured while running server: %s", err.Error())
 		}
 	}()
 
-	logrus.Print("classOS_backend started")
+	logrus.Printf("classOS_backend started on %s", address)
 
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGTERM, syscall.SIGINT)
