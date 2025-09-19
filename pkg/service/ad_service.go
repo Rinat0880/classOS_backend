@@ -18,6 +18,7 @@ type ADUser struct {
 	UserPrincipalName string `json:"user_principal_name"`
 	Enabled           bool   `json:"enabled"`
 	DistinguishedName string `json:"distinguished_name"`
+	Password          string `json:"password"`
 }
 
 type ADGroup struct {
@@ -70,7 +71,6 @@ func NewADService() *ADService {
 	return service
 }
 
-// Устанавливает соединение с AD
 func (ads *ADService) connect() (*ldap.Conn, error) {
 	if !ads.enabled {
 		return nil, fmt.Errorf("AD service is disabled")
@@ -81,7 +81,6 @@ func (ads *ADService) connect() (*ldap.Conn, error) {
 
 	address := fmt.Sprintf("%s:%s", ads.host, ads.port)
 
-	// LDAPS соединение
 	conn, err = ldap.DialTLS("tcp", address, &tls.Config{
 		InsecureSkipVerify: false,
 	})
@@ -90,7 +89,6 @@ func (ads *ADService) connect() (*ldap.Conn, error) {
 		return nil, fmt.Errorf("failed to connect to AD: %w", err)
 	}
 
-	// Авторизация
 	if err := conn.Bind(ads.bindUser, ads.bindPass); err != nil {
 		conn.Close()
 		return nil, fmt.Errorf("failed to bind user(%s) to AD: %w", ads.bindUser, err)
@@ -99,7 +97,6 @@ func (ads *ADService) connect() (*ldap.Conn, error) {
 	return conn, nil
 }
 
-// Тестирует соединение с AD
 func (ads *ADService) TestConnection() error {
 	if !ads.enabled {
 		return fmt.Errorf("AD service is disabled - missing AD configuration")
@@ -146,7 +143,7 @@ func (ads *ADService) CreateGroup(group ADGroup) error {
 	}
 	defer conn.Close()
 
-	fmt.Print("user: ",ads.bindUser,"|  pswrd: ", ads.bindPass, "|  baseDN: ", ads.baseDN)
+	fmt.Print("user: ", ads.bindUser, "|  pswrd: ", ads.bindPass, "|  baseDN: ", ads.baseDN)
 
 	groupDN := fmt.Sprintf("CN=%s, OU=classos_groups, %s", group.Name, ads.baseDN)
 
@@ -160,17 +157,16 @@ func (ads *ADService) CreateGroup(group ADGroup) error {
 	addReq.Attribute("name", []string{group.Name})
 	addReq.Attribute("sAMAccountName", []string{group.Name})
 	addReq.Attribute("instanceType", []string{fmt.Sprintf("%d", 0x00000004)})
-	addReq.Attribute("groupType", []string{fmt.Sprintf("%d", 0x00000004 | 0x80000000)})
+	addReq.Attribute("groupType", []string{fmt.Sprintf("%d", 0x00000004|0x80000000)})
 
 	if err := conn.Add(addReq); err != nil {
-	    return fmt.Errorf("failed to create group in AD: %w", err)
+		return fmt.Errorf("failed to create group in AD: %w", err)
 	}
-	
+
 	logrus.WithField("groupDN", groupDN).Info("AD group created successfully")
 	return nil
 }
 
-// Создает пользователя в AD
 func (ads *ADService) CreateUser(user ADUser, password string) error {
 	if !ads.enabled {
 		return fmt.Errorf("AD service is disabled")
@@ -182,10 +178,8 @@ func (ads *ADService) CreateUser(user ADUser, password string) error {
 	}
 	defer conn.Close()
 
-	fmt.Print("user: ",ads.bindUser,"|  pswrd: ", ads.bindPass, "|  baseDN: ", ads.baseDN)
+	fmt.Print("user: ", ads.bindUser, "|  pswrd: ", ads.bindPass, "|  baseDN: ", ads.baseDN)
 
-
-	// Формируем DN пользователя
 	userDN := fmt.Sprintf("CN=%s, OU=classos_users, %s", user.DisplayName, ads.baseDN)
 
 	logrus.WithFields(logrus.Fields{
@@ -193,7 +187,6 @@ func (ads *ADService) CreateUser(user ADUser, password string) error {
 		"sam":    user.SamAccountName,
 	}).Info("Creating AD user")
 
-	// Создаем пользователя (сначала disabled)
 	// addRequest := ldap.NewAddRequest(userDN, []ldap.Control{})
 	// addRequest.Attribute("objectClass", []string{"top", "organizationalPerson", "user", "person"})
 	// addRequest.Attribute("cn", []string{user.DisplayName})
@@ -206,43 +199,39 @@ func (ads *ADService) CreateUser(user ADUser, password string) error {
 	addRequest := ldap.NewAddRequest(userDN, []ldap.Control{})
 	addRequest.Attribute("objectClass", []string{"top", "person", "organizationalPerson", "user"})
 	addRequest.Attribute("cn", []string{user.DisplayName})
-	addRequest.Attribute("sn", []string{"User"}) 
+	addRequest.Attribute("sn", []string{"User"})
 	addRequest.Attribute("displayName", []string{user.DisplayName})
 	addRequest.Attribute("sAMAccountName", []string{user.SamAccountName})
 	addRequest.Attribute("userPrincipalName", []string{
-	    fmt.Sprintf("%s@school.local", user.SamAccountName),
+		fmt.Sprintf("%s@school.local", user.SamAccountName),
 	})
-	addRequest.Attribute("userAccountControl", []string{"514"}) 
+	addRequest.Attribute("userAccountControl", []string{"514"})
 
 	if err := conn.Add(addRequest); err != nil {
-	    return fmt.Errorf("failed to create user in AD: %w", err)
+		return fmt.Errorf("failed to create user in AD: %w", err)
 	}
 
-	// Устанавливаем пароль
 	if password != "" {
 		if err := ads.setUserPassword(conn, userDN, password); err != nil {
-			// Пытаемся удалить пользователя при ошибке
 			ads.deleteUserByDN(conn, userDN)
 			return fmt.Errorf("failed to set password: %w", err)
 		}
 	}
 
-	// Включаем учетку
 	if user.Enabled {
 		if err := ads.enableUser(conn, userDN); err != nil {
-			// Пытаемся удалить пользователя при ошибке
 			ads.deleteUserByDN(conn, userDN)
 			return fmt.Errorf("failed to enable user: %w", err)
 		}
 	}
 
 	logrus.WithField("userDN", userDN).Info("AD user created successfully")
+
+	//здесь нужно добавить логику добавления инста в группу при создании
 	return nil
 }
 
-// Устанавливает пароль пользователя
 func (ads *ADService) setUserPassword(conn *ldap.Conn, userDN, password string) error {
-	// Конвертируем пароль в UTF-16LE формат для AD
 	passwordBytes := ads.encodePasswordForAD(password)
 
 	modifyRequest := ldap.NewModifyRequest(userDN, nil)
@@ -282,7 +271,6 @@ func (ads *ADService) encodePasswordForAD(password string) []byte {
 	return passwordBytes
 }
 
-// Обновляет пользователя в AD
 func (ads *ADService) UpdateUser(username string, updates ADUser) error {
 	if !ads.enabled {
 		return fmt.Errorf("AD service is disabled")
@@ -294,44 +282,39 @@ func (ads *ADService) UpdateUser(username string, updates ADUser) error {
 	}
 	defer conn.Close()
 
-	// Найдем пользователя по sAMAccountName
 	userDN, err := ads.findUserDN(conn, username)
 	if err != nil {
 		return fmt.Errorf("user not found: %w", err)
 	}
 
-	modifyRequest := ldap.NewModifyRequest(userDN, nil)
-	hasChanges := false
+	if updates.Password != "" {
+		if err := ads.setUserPassword(conn, userDN, updates.Password); err != nil {
+			return fmt.Errorf("failed to change password: %w", err)
+		}
+	}
 
 	if updates.DisplayName != "" {
-		modifyRequest.Replace("displayName", []string{updates.DisplayName})
-		modifyRequest.Replace("cn", []string{updates.DisplayName})
-		hasChanges = true
+		req := ldap.NewModifyDNRequest(userDN, "CN="+updates.DisplayName, true, "")
+		if err = conn.ModifyDN(req); err != nil {
+			return fmt.Errorf("failed to modify DN: %w", err)
+		}
 	}
 
-	if updates.EmailAddress != "" {
-		modifyRequest.Replace("mail", []string{updates.EmailAddress})
-		hasChanges = true
-	}
-
+	modifyReq := ldap.NewModifyRequest(userDN, nil)
 	if updates.UserPrincipalName != "" {
-		modifyRequest.Replace("userPrincipalName", []string{updates.UserPrincipalName})
-		hasChanges = true
+		modifyReq.Replace("userPrincipalName", []string{updates.UserPrincipalName})
 	}
 
-	if !hasChanges {
-		return fmt.Errorf("no fields to update")
-	}
-
-	if err := conn.Modify(modifyRequest); err != nil {
-		return fmt.Errorf("failed to update user in AD: %w", err)
+	if len(modifyReq.Changes) > 0 {
+		if err = conn.Modify(modifyReq); err != nil {
+			return fmt.Errorf("failed to modify user attributes: %w", err)
+		}
 	}
 
 	logrus.WithField("userDN", userDN).Info("AD user updated successfully")
 	return nil
 }
 
-// Удаляет пользователя из AD
 func (ads *ADService) DeleteUser(username string) error {
 	if !ads.enabled {
 		return fmt.Errorf("AD service is disabled")

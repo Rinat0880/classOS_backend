@@ -48,7 +48,6 @@ func (h *Handler) InitRoutes() *gin.Engine {
 			users.POST("/:id/password", h.changePassword)
 		}
 
-		// AD административные функции
 		admin := api.Group("/admin")
 		{
 			admin.POST("/sync", h.syncFromAD)
@@ -57,7 +56,3 @@ func (h *Handler) InitRoutes() *gin.Engine {
 	}
 	return router
 }
-
-// Новые методы для работы с AD
-
-
