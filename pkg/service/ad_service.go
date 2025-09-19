@@ -293,16 +293,29 @@ func (ads *ADService) UpdateUser(username string, updates ADUser) error {
 		}
 	}
 
-	if updates.DisplayName != "" {
-		req := ldap.NewModifyDNRequest(userDN, "CN="+updates.DisplayName, true, "")
-		if err = conn.ModifyDN(req); err != nil {
-			return fmt.Errorf("failed to modify DN: %w", err)
-		}
-	}
+	// if updates.DisplayName != "" {
+	// 	req := ldap.NewModifyDNRequest(userDN, "CN="+updates.DisplayName, true, "")
+	// 	if err = conn.ModifyDN(req); err != nil {
+	// 		return fmt.Errorf("failed to modify DN: %w", err)
+	// 	}
+	// }
 
 	modifyReq := ldap.NewModifyRequest(userDN, nil)
+
+	if updates.SamAccountName != "" {
+		modifyReq.Replace("sAMAccountName", []string{updates.SamAccountName})
+	}
+
 	if updates.UserPrincipalName != "" {
 		modifyReq.Replace("userPrincipalName", []string{updates.UserPrincipalName})
+	}
+
+	if updates.DisplayName != "" {
+		modifyReq.Replace("displayName", []string{updates.DisplayName})
+	}
+
+	if updates.EmailAddress != "" {
+		modifyReq.Replace("mail", []string{updates.EmailAddress})
 	}
 
 	if len(modifyReq.Changes) > 0 {
