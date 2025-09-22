@@ -218,12 +218,12 @@ func (ads *ADService) CreateUser(user ADUser, password string) error {
 		}
 	}
 
-	modReq := ldap.NewModifyRequest(userDN, []ldap.Control{})
-    modReq.Replace("pwdLastSet", []string{"0"})
-    if err := conn.Modify(modReq); err != nil {
-        ads.deleteUserByDN(conn, userDN)
-        return fmt.Errorf("failed to force password reset: %w", err)
-    }
+	// modReq := ldap.NewModifyRequest(userDN, []ldap.Control{})
+    // modReq.Replace("pwdLastSet", []string{"0"})
+    // if err := conn.Modify(modReq); err != nil {
+    //     ads.deleteUserByDN(conn, userDN)
+    //     return fmt.Errorf("failed to force password reset: %w", err)
+    // }
 
 	if user.Enabled {
 		if err := ads.enableUser(conn, userDN); err != nil {
@@ -253,6 +253,7 @@ func (ads *ADService) setUserPassword(conn *ldap.Conn, userDN, password string) 
 
 func (ads *ADService) enableUser(conn *ldap.Conn, userDN string) error {
 	modifyRequest := ldap.NewModifyRequest(userDN, nil)
+	modifyRequest.Replace("pwdLastSet", []string{"0"})
 	modifyRequest.Replace("userAccountControl", []string{"66048"}) 
 
 	if err := conn.Modify(modifyRequest); err != nil {
