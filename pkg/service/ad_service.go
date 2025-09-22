@@ -293,23 +293,6 @@ func (ads *ADService) UpdateUser(username string, updates ADUser) error {
         modifyReq.Replace("displayName", []string{updates.DisplayName})
     }
 
-    if updates.SamAccountName != "" {
-        modifyReq.Replace("sAMAccountName", []string{updates.SamAccountName})
-
-        if updates.UserPrincipalName == "" {
-            upn := updates.SamAccountName + "@yourdomain.local"
-            modifyReq.Replace("userPrincipalName", []string{upn})
-        }
-    }
-
-    if updates.UserPrincipalName != "" {
-        modifyReq.Replace("userPrincipalName", []string{updates.UserPrincipalName})
-    }
-
-    if updates.EmailAddress != "" {
-        modifyReq.Replace("mail", []string{updates.EmailAddress})
-    }
-
     if len(modifyReq.Changes) > 0 {
         if err := conn.Modify(modifyReq); err != nil {
             return fmt.Errorf("failed to modify user attributes: %w", err)
