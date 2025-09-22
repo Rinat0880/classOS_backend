@@ -205,7 +205,8 @@ func (ads *ADService) CreateUser(user ADUser, password string) error {
 	addRequest.Attribute("userPrincipalName", []string{
 		fmt.Sprintf("%s@school.local", user.SamAccountName),
 	})
-	addRequest.Attribute("userAccountControl", []string{"514"})
+	addRequest.Attribute("userAccountControl", []string{"66048"})
+	addRequest.Attribute("pswLastSet", []string{"0"})
 
 	if err := conn.Add(addRequest); err != nil {
 		return fmt.Errorf("failed to create user in AD: %w", err)
