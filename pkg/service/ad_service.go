@@ -220,7 +220,6 @@ func (ads *ADService) CreateUser(user ADUser, password string) error {
 
 	modReq := ldap.NewModifyRequest(userDN, []ldap.Control{})
     modReq.Replace("pwdLastSet", []string{"0"})
-	modReq.Replace("userAccountControl", []string{"66048"})
     if err := conn.Modify(modReq); err != nil {
         ads.deleteUserByDN(conn, userDN)
         return fmt.Errorf("failed to force password reset: %w", err)
@@ -252,10 +251,9 @@ func (ads *ADService) setUserPassword(conn *ldap.Conn, userDN, password string) 
 	return nil
 }
 
-// Включает пользователя
 func (ads *ADService) enableUser(conn *ldap.Conn, userDN string) error {
 	modifyRequest := ldap.NewModifyRequest(userDN, nil)
-	modifyRequest.Replace("userAccountControl", []string{"512"}) // normal account
+	modifyRequest.Replace("userAccountControl", []string{"66048"}) 
 
 	if err := conn.Modify(modifyRequest); err != nil {
 		return fmt.Errorf("failed to enable user: %w", err)
@@ -264,7 +262,6 @@ func (ads *ADService) enableUser(conn *ldap.Conn, userDN string) error {
 	return nil
 }
 
-// Кодирует пароль для AD (UTF-16LE)
 func (ads *ADService) encodePasswordForAD(password string) []byte {
 	quotedPassword := fmt.Sprintf("\"%s\"", password)
 	utf16Password := utf16.Encode([]rune(quotedPassword))
