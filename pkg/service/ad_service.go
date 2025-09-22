@@ -272,60 +272,58 @@ func (ads *ADService) encodePasswordForAD(password string) []byte {
 }
 
 func (ads *ADService) UpdateUser(username string, updates ADUser) error {
-	if !ads.enabled {
-		return fmt.Errorf("AD service is disabled")
-	}
+    if !ads.enabled {
+        return fmt.Errorf("AD service is disabled")
+    }
 
-	conn, err := ads.connect()
-	if err != nil {
-		return err
-	}
-	defer conn.Close()
+    conn, err := ads.connect()
+    if err != nil {
+        return err
+    }
+    defer conn.Close()
 
-	userDN, err := ads.findUserDN(conn, username)
-	if err != nil {
-		return fmt.Errorf("user not found: %w", err)
-	}
+    userDN, err := ads.findUserDN(conn, username)
+    if err != nil {
+        return fmt.Errorf("user not found: %w", err)
+    }
 
-	if updates.Password != "" {
-		if err := ads.setUserPassword(conn, userDN, updates.Password); err != nil {
-			return fmt.Errorf("failed to change password: %w", err)
-		}
-	}
+    modifyReq := ldap.NewModifyRequest(userDN, nil)
 
-	// if updates.DisplayName != "" {
-	// 	req := ldap.NewModifyDNRequest(userDN, "CN="+updates.DisplayName, true, "")
-	// 	if err = conn.ModifyDN(req); err != nil {
-	// 		return fmt.Errorf("failed to modify DN: %w", err)
-	// 	}
-	// }
+    if updates.DisplayName != "" {
+        modifyReq.Replace("displayName", []string{updates.DisplayName})
+    }
 
-	modifyReq := ldap.NewModifyRequest(userDN, nil)
+    if updates.SamAccountName != "" {
+        modifyReq.Replace("sAMAccountName", []string{updates.SamAccountName})
 
-	if updates.SamAccountName != "" {
-		modifyReq.Replace("sAMAccountName", []string{updates.SamAccountName})
-	}
+        if updates.UserPrincipalName == "" {
+            upn := updates.SamAccountName + "@yourdomain.local"
+            modifyReq.Replace("userPrincipalName", []string{upn})
+        }
+    }
 
-	if updates.UserPrincipalName != "" {
-		modifyReq.Replace("userPrincipalName", []string{updates.UserPrincipalName})
-	}
+    if updates.UserPrincipalName != "" {
+        modifyReq.Replace("userPrincipalName", []string{updates.UserPrincipalName})
+    }
 
-	if updates.DisplayName != "" {
-		modifyReq.Replace("displayName", []string{updates.DisplayName})
-	}
+    if updates.EmailAddress != "" {
+        modifyReq.Replace("mail", []string{updates.EmailAddress})
+    }
 
-	if updates.EmailAddress != "" {
-		modifyReq.Replace("mail", []string{updates.EmailAddress})
-	}
+    if len(modifyReq.Changes) > 0 {
+        if err := conn.Modify(modifyReq); err != nil {
+            return fmt.Errorf("failed to modify user attributes: %w", err)
+        }
+    }
 
-	if len(modifyReq.Changes) > 0 {
-		if err = conn.Modify(modifyReq); err != nil {
-			return fmt.Errorf("failed to modify user attributes: %w", err)
-		}
-	}
+    if updates.Password != "" {
+        if err := ads.setUserPassword(conn, userDN, updates.Password); err != nil {
+            return fmt.Errorf("failed to update password: %w", err)
+        }
+    }
 
-	logrus.WithField("userDN", userDN).Info("AD user updated successfully")
-	return nil
+    logrus.WithField("userDN", userDN).Info("AD user updated successfully")
+    return nil
 }
 
 func (ads *ADService) DeleteUser(username string) error {
