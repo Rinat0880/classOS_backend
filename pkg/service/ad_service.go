@@ -253,7 +253,7 @@ func (ads *ADService) setUserPassword(conn *ldap.Conn, userDN, password string) 
 
 func (ads *ADService) enableUser(conn *ldap.Conn, userDN string) error {
 	modifyRequest := ldap.NewModifyRequest(userDN, nil)
-	modifyRequest.Replace("userAccountControl", []string{"66048"}) 
+	modifyRequest.Replace("userAccountControl", []string{"512"}) 
 
 	if err := conn.Modify(modifyRequest); err != nil {
 		return fmt.Errorf("failed to enable user: %w", err)
