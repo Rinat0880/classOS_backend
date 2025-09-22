@@ -205,7 +205,7 @@ func (ads *ADService) CreateUser(user ADUser, password string) error {
 	addRequest.Attribute("userPrincipalName", []string{
 		fmt.Sprintf("%s@school.local", user.SamAccountName),
 	})
-	addRequest.Attribute("userAccountControl", []string{"66048"})
+	addRequest.Attribute("userAccountControl", []string{"514"})
 
 	if err := conn.Add(addRequest); err != nil {
 		return fmt.Errorf("failed to create user in AD: %w", err)
@@ -220,6 +220,7 @@ func (ads *ADService) CreateUser(user ADUser, password string) error {
 
 	modReq := ldap.NewModifyRequest(userDN, []ldap.Control{})
     modReq.Replace("pwdLastSet", []string{"0"})
+	modReq.Replace("userAccountControl", []string{"66048"})
     if err := conn.Modify(modReq); err != nil {
         ads.deleteUserByDN(conn, userDN)
         return fmt.Errorf("failed to force password reset: %w", err)
