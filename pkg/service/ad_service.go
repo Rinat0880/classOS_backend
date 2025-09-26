@@ -325,7 +325,6 @@ func (ads *ADService) DeleteUser(username string) error {
 	}
 	defer conn.Close()
 
-	// Найдем пользователя по sAMAccountName
 	userDN, err := ads.findUserDN(conn, username)
 	if err != nil {
 		return fmt.Errorf("user not found: %w", err)
@@ -334,7 +333,6 @@ func (ads *ADService) DeleteUser(username string) error {
 	return ads.deleteUserByDN(conn, userDN)
 }
 
-// Удаляет пользователя по DN
 func (ads *ADService) deleteUserByDN(conn *ldap.Conn, userDN string) error {
 	delRequest := ldap.NewDelRequest(userDN, nil)
 	if err := conn.Del(delRequest); err != nil {
@@ -345,7 +343,6 @@ func (ads *ADService) deleteUserByDN(conn *ldap.Conn, userDN string) error {
 	return nil
 }
 
-// Изменяет пароль пользователя
 func (ads *ADService) ChangeUserPassword(username, newPassword string) error {
 	if !ads.enabled {
 		return fmt.Errorf("AD service is disabled")
@@ -357,7 +354,6 @@ func (ads *ADService) ChangeUserPassword(username, newPassword string) error {
 	}
 	defer conn.Close()
 
-	// Найдем пользователя по sAMAccountName
 	userDN, err := ads.findUserDN(conn, username)
 	if err != nil {
 		return fmt.Errorf("user not found: %w", err)
@@ -430,7 +426,6 @@ func (ads *ADService) findUserDN(conn *ldap.Conn, username string) (string, erro
 // 	return nil
 // }
 
-// Обновляет группу в AD
 func (ads *ADService) UpdateGroup(groupName string, updates ADGroup) error {
 	if !ads.enabled {
 		return fmt.Errorf("AD service is disabled")
@@ -442,25 +437,16 @@ func (ads *ADService) UpdateGroup(groupName string, updates ADGroup) error {
 	}
 	defer conn.Close()
 
-	// Найдем группу по имени
 	groupDN, err := ads.findGroupDN(conn, groupName)
 	if err != nil {
 		return fmt.Errorf("group not found: %w", err)
 	}
 
-	modifyRequest := ldap.NewModifyRequest(groupDN, nil)
-	hasChanges := false
+	newgroupDN := fmt.Sprintf("CN=%s", updates.Name)
 
-	if updates.Description != "" {
-		modifyRequest.Replace("description", []string{updates.Description})
-		hasChanges = true
-	}
+	modifyRequest := ldap.NewModifyDNRequest(groupDN, newgroupDN, true, "")
 
-	if !hasChanges {
-		return fmt.Errorf("no fields to update")
-	}
-
-	if err := conn.Modify(modifyRequest); err != nil {
+	if err := conn.ModifyDN(modifyRequest); err != nil {
 		return fmt.Errorf("failed to update group in AD: %w", err)
 	}
 
@@ -468,7 +454,6 @@ func (ads *ADService) UpdateGroup(groupName string, updates ADGroup) error {
 	return nil
 }
 
-// Удаляет группу из AD
 func (ads *ADService) DeleteGroup(groupName string) error {
 	if !ads.enabled {
 		return fmt.Errorf("AD service is disabled")
@@ -480,7 +465,6 @@ func (ads *ADService) DeleteGroup(groupName string) error {
 	}
 	defer conn.Close()
 
-	// Найдем группу по имени
 	groupDN, err := ads.findGroupDN(conn, groupName)
 	if err != nil {
 		return fmt.Errorf("group not found: %w", err)
@@ -495,7 +479,6 @@ func (ads *ADService) DeleteGroup(groupName string) error {
 	return nil
 }
 
-// Находит DN группы по имени
 func (ads *ADService) findGroupDN(conn *ldap.Conn, groupName string) (string, error) {
 	searchRequest := ldap.NewSearchRequest(
 		ads.baseDN,
@@ -519,7 +502,6 @@ func (ads *ADService) findGroupDN(conn *ldap.Conn, groupName string) (string, er
 	return searchResult.Entries[0].DN, nil
 }
 
-// Добавляет пользователя в группу
 func (ads *ADService) AddUserToGroup(username, groupName string) error {
 	if !ads.enabled {
 		return fmt.Errorf("AD service is disabled")
@@ -531,7 +513,6 @@ func (ads *ADService) AddUserToGroup(username, groupName string) error {
 	}
 	defer conn.Close()
 
-	// Найдем DN пользователя и группы
 	userDN, err := ads.findUserDN(conn, username)
 	if err != nil {
 		return fmt.Errorf("user not found: %w", err)
@@ -542,7 +523,6 @@ func (ads *ADService) AddUserToGroup(username, groupName string) error {
 		return fmt.Errorf("group not found: %w", err)
 	}
 
-	// Добавляем пользователя в группу
 	modifyRequest := ldap.NewModifyRequest(groupDN, nil)
 	modifyRequest.Add("member", []string{userDN})
 
@@ -558,7 +538,6 @@ func (ads *ADService) AddUserToGroup(username, groupName string) error {
 	return nil
 }
 
-// Удаляет пользователя из группы
 func (ads *ADService) RemoveUserFromGroup(username, groupName string) error {
 	if !ads.enabled {
 		return fmt.Errorf("AD service is disabled")
@@ -570,7 +549,6 @@ func (ads *ADService) RemoveUserFromGroup(username, groupName string) error {
 	}
 	defer conn.Close()
 
-	// Найдем DN пользователя и группы
 	userDN, err := ads.findUserDN(conn, username)
 	if err != nil {
 		return fmt.Errorf("user not found: %w", err)
@@ -581,7 +559,6 @@ func (ads *ADService) RemoveUserFromGroup(username, groupName string) error {
 		return fmt.Errorf("group not found: %w", err)
 	}
 
-	// Удаляем пользователя из группы
 	modifyRequest := ldap.NewModifyRequest(groupDN, nil)
 	modifyRequest.Delete("member", []string{userDN})
 
@@ -597,7 +574,6 @@ func (ads *ADService) RemoveUserFromGroup(username, groupName string) error {
 	return nil
 }
 
-// Получает всех пользователей из AD
 func (ads *ADService) GetAllUsers() ([]ADUser, error) {
 	if !ads.enabled {
 		return nil, fmt.Errorf("AD service is disabled")
@@ -640,13 +616,11 @@ func (ads *ADService) GetAllUsers() ([]ADUser, error) {
 	return users, nil
 }
 
-// Проверяет, включен ли пользователь
 func (ads *ADService) isUserEnabled(userAccountControl string) bool {
 	// userAccountControl: 512 = enabled, 514 = disabled
 	return userAccountControl == "512"
 }
 
-// Синхронизирует всех пользователей из AD
 func (ads *ADService) SyncAllUsersFromAD() error {
 	if !ads.enabled {
 		return fmt.Errorf("AD service is disabled")
