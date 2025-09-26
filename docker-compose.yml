@@ -52,7 +52,7 @@ services:
       - ./certs/ad-ca.crt:/usr/local/share/ca-certificates/ad-ca.crt:ro
       
     extra_hosts:
-      - "win-g32prphu8us.school.local:10.20.1.131" 
+      - "win-g32prphu8us.school.local:172.29.144.1" 
     
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
@@ -77,7 +77,7 @@ services:
       - classos_network
     extra_hosts:
       - "host.docker.internal:host-gateway"
-      - "win-g32prphu8us.school.local:10.20.1.131"  
+      - "win-g32prphu8us.school.local:172.29.144.1"  
     command: ["./test-ldap"]
     profiles:
       - test
