@@ -442,10 +442,11 @@ func (ads *ADService) UpdateGroup(groupName string, updates ADGroup) error {
 		return fmt.Errorf("group not found: %w", err)
 	}
 
-	logrus.Infof("ModifyDN: oldDN=%s", groupDN)
+	logrus.Infof("ModifyDN: oldDN=%s, and new name: %s", groupDN, updates.Name)
+	newRDN := fmt.Sprintf("CN=%s", ldap.EscapeFilter(updates.Name))
+	logrus.Infof("newRDN: %s", newRDN)
 
-	newRDN := fmt.Sprintf("CN=%s", updates.Name)
-	modifyRequest := ldap.NewModifyDNRequest(groupDN, newRDN, true, "")
+	modifyRequest := ldap.NewModifyDNRequest(groupDN, newRDN, true, "") //остановился на изменении имени группы (CN)
 
 	if err := conn.ModifyDN(modifyRequest); err != nil {
 		return fmt.Errorf("failed to update group in AD: %w", err)
