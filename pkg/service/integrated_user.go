@@ -6,6 +6,7 @@ import (
 
 	classosbackend "github.com/rinat0880/classOS_backend"
 	"github.com/rinat0880/classOS_backend/pkg/repository"
+	"github.com/sirupsen/logrus"
 )
 
 type IntegratedUserService struct {
@@ -37,7 +38,16 @@ func (s *IntegratedUserService) Create(checkerId, groupId int, user classosbacke
 	defer tx.Rollback()
 
 	adUser := s.convertUserToADUser(user)
-	err = s.adService.CreateUser(adUser, user.Password)
+
+	var groupname string
+	if user.GroupName != nil {
+		groupname = *user.GroupName
+		logrus.WithField("groupname", groupname).Info("obtained successfullay groupname")
+	} else{
+		return 0, fmt.Errorf("failed to obtain groupname for AD")
+	}
+
+	err = s.adService.CreateUser(adUser, user.Password, groupname)
 	if err != nil {
 		return 0, fmt.Errorf("failed to create user in AD: %w", err)
 	}

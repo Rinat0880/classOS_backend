@@ -167,7 +167,7 @@ func (ads *ADService) CreateGroup(group ADGroup) error {
 	return nil
 }
 
-func (ads *ADService) CreateUser(user ADUser, password string) error {
+func (ads *ADService) CreateUser(user ADUser, password string, groupname string) error {
 	if !ads.enabled {
 		return fmt.Errorf("AD service is disabled")
 	}
@@ -231,10 +231,14 @@ func (ads *ADService) CreateUser(user ADUser, password string) error {
 			return fmt.Errorf("failed to enable user: %w", err)
 		}
 	}
+	//здесь нужно добавить логику добавления инста в группу при создании
+	if err := ads.AddUserToGroup(user.DisplayName, groupname); err != nil {
+		ads.deleteUserByDN(conn, userDN)
+		return fmt.Errorf("failed user to add to a group: %w", err)
+	}
 
 	logrus.WithField("userDN", userDN).Info("AD user created successfully")
 
-	//здесь нужно добавить логику добавления инста в группу при создании
 	return nil
 }
 

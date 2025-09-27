@@ -9,7 +9,7 @@ type User struct {
 	Password  string  `json:"password" db:"password_hash" binding:"required"`
 	Role      string  `json:"role" db:"role"`
 	GroupID   *int    `json:"group_id,omitempty" db:"group_id"`
-	GroupName *string `json:"group_name,omitempty" db:"group_name"`
+	GroupName *string `json:"group_name" db:"group_name"`
 }
 
 type UpdateUserInput struct {
