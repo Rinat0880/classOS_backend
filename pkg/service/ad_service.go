@@ -232,7 +232,7 @@ func (ads *ADService) CreateUser(user ADUser, password string, groupname string)
 		}
 	}
 	//здесь нужно добавить логику добавления инста в группу при создании
-	if err := ads.AddUserToGroup(user.DisplayName, groupname); err != nil {
+	if err := ads.AddUserToGroup(user.SamAccountName, groupname); err != nil {
 		ads.deleteUserByDN(conn, userDN)
 		return fmt.Errorf("failed user to add to a group: %w", err)
 	}
