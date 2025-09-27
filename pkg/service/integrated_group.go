@@ -76,7 +76,7 @@ func (s *IntegratedGroupService) Update(checkerId, groupId int, input classosbac
 
 	if input.Name != nil {
 		adUpdates := ADGroup{
-			Description: "Updated by ClassOS",
+			Name: *input.Name,
 		}
 
 		err = s.adService.UpdateGroup(currentGroup.Name, adUpdates)
