@@ -50,12 +50,6 @@ func (r *UserPostgres) UpdateWithTx(tx *sql.Tx, checkerId, userId int, input cla
 		argId++
 	}
 
-	if input.Username != nil {
-		userSetValues = append(userSetValues, fmt.Sprintf("username=$%d", argId))
-		userArgs = append(userArgs, *input.Username)
-		argId++
-	}
-
 	if input.Password != nil {
 		userSetValues = append(userSetValues, fmt.Sprintf("password_hash=$%d", argId))
 		userArgs = append(userArgs, *input.Password)
@@ -166,12 +160,6 @@ func (r *UserPostgres) Update(checkerId, userId int, input classosbackend.Update
 	if input.Name != nil {
 		userSetValues = append(userSetValues, fmt.Sprintf("name=$%d", argId))
 		userArgs = append(userArgs, *input.Name)
-		argId++
-	}
-
-	if input.Username != nil {
-		userSetValues = append(userSetValues, fmt.Sprintf("username=$%d", argId))
-		userArgs = append(userArgs, *input.Username)
 		argId++
 	}
 
