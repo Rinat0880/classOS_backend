@@ -573,6 +573,7 @@ func (ads *ADService) MoveUserToAnotherGroup(username, groupName string) error {
 		return fmt.Errorf("user not found: %w", err)
 	}
 
+	logrus.Infof("oldgroupname: %s", oldGroupName)
 	groupDN, err := ads.findGroupDN(conn, oldGroupName)
 	if err != nil {
 		return fmt.Errorf("group not found: %w", err)
