@@ -1,10 +1,12 @@
 package handler
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	classosbackend "github.com/rinat0880/classOS_backend"
+	"github.com/rinat0880/classOS_backend/pkg/service"
 )
 
 type signInInput struct {
@@ -42,7 +44,11 @@ func (h *Handler) signIn(c *gin.Context) {
 
 	token, err := h.services.Authorization.GenerateToken(input.Username, input.Password)
 	if err != nil {
-		newErrorResponse(c, http.StatusInternalServerError, err.Error())
+		if errors.Is(err, service.ErrInvalidCredentials) {
+			newErrorResponse(c, http.StatusUnauthorized, err.Error()) // 401
+			return
+		}
+		newErrorResponse(c, http.StatusInternalServerError, "something went wrong at server") // 500
 		return
 	}
 

@@ -16,6 +16,8 @@ type IntegratedUserService struct {
 	adService   *ADService
 }
 
+var groupname string
+
 func NewIntegratedUserService(repo repository.User, groupRepo repository.Group, authService *AuthService, adService *ADService) *IntegratedUserService {
 	return &IntegratedUserService{
 		repo:        repo,
@@ -39,7 +41,6 @@ func (s *IntegratedUserService) Create(checkerId, groupId int, user classosbacke
 
 	adUser := s.convertUserToADUser(user)
 
-	var groupname string
 	if user.GroupName != nil {
 		groupname = *user.GroupName
 		logrus.WithField("groupname", groupname).Info("obtained successfullay groupname")
@@ -100,7 +101,14 @@ func (s *IntegratedUserService) Update(checkerId, userId int, input classosbacke
 			adUpdates.SamAccountName = *input.Username
 		}
 
-		err = s.adService.UpdateUser(currentUser.Username, adUpdates)
+		if input.GroupName != nil {
+			groupname = *input.GroupName
+			logrus.WithField("groupname", groupname).Info("obtained successfullay groupname")
+		} else{
+			return fmt.Errorf("failed to obtain groupname for AD")
+		}
+
+		err = s.adService.UpdateUser(currentUser.Username, adUpdates, groupname)
 		if err != nil {
 			return fmt.Errorf("failed to update user in AD: %w", err)
 		}

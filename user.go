@@ -13,15 +13,16 @@ type User struct {
 }
 
 type UpdateUserInput struct {
-	Name     *string `json:"name"`
-	Username *string `json:"username"`
-	Password *string `json:"password"`
-	Role     *string `json:"role"`
-	GroupID  *int    `json:"group_id"`
+	Name      *string `json:"name"`
+	Username  *string `json:"username"`
+	Password  *string `json:"password"`
+	Role      *string `json:"role"`
+	GroupID   *int    `json:"group_id"`
+	GroupName *string `json:"group_name"`
 }
 
 func (i UpdateUserInput) Validate() error {
-	if i.Name == nil && i.Username == nil && i.Role == nil && i.GroupID == nil{
+	if i.Name == nil && i.Username == nil && i.Role == nil && i.GroupID == nil {
 		return errors.New("update structure has no values")
 	}
 

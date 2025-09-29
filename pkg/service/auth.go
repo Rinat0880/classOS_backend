@@ -2,6 +2,7 @@ package service
 
 import (
 	"crypto/sha1"
+	"database/sql"
 	"errors"
 	"fmt"
 	"os"
@@ -14,10 +15,12 @@ import (
 
 const tokenTTL = 12 * time.Hour
 
+var ErrInvalidCredentials = errors.New("incorrect login or password")
+
 type tokenClaims struct {
 	jwt.StandardClaims
 	CheckerId int    `json:"checker_id"`
-	Role   string `json:"role"`
+	Role      string `json:"role"`
 }
 
 type AuthService struct {
@@ -39,7 +42,10 @@ func NewAuthService(repo repository.Authorization) *AuthService {
 func (s *AuthService) GenerateToken(username, password string) (string, error) {
 	user, err := s.repo.GetUser(username, s.GeneratePasswordHash(password))
 	if err != nil {
-		return "", err
+		if errors.Is(err, sql.ErrNoRows) {
+			return "", ErrInvalidCredentials
+		}
+		return "", fmt.Errorf("auth.GenerateToken: %w", err)
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, &tokenClaims{
@@ -48,7 +54,7 @@ func (s *AuthService) GenerateToken(username, password string) (string, error) {
 			IssuedAt:  time.Now().Unix(),
 		},
 		CheckerId: user.ID,
-		Role:   user.Role,
+		Role:      user.Role,
 	})
 
 	signingKey := getSigningKey()
@@ -61,7 +67,6 @@ func (s *AuthService) GenerateToken(username, password string) (string, error) {
 
 func (s *AuthService) CreateUser(user classosbackend.User) (int, error) {
 	user.Password = s.GeneratePasswordHash(user.Password)
-
 	return s.repo.CreateUser(user)
 }
 
@@ -75,7 +80,6 @@ func (s *AuthService) ParseToken(accessToken string) (int, string, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, errors.New("invalid signing method")
 		}
-
 		return []byte(signingKey), nil
 	})
 	if err != nil {
@@ -95,6 +99,5 @@ func (s *AuthService) GeneratePasswordHash(password string) string {
 	hash.Write([]byte(password))
 	salt := getSalt()
 	result := fmt.Sprintf("%x", hash.Sum([]byte(salt)))
-	
 	return result
 }

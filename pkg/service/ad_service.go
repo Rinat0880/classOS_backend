@@ -280,7 +280,7 @@ func (ads *ADService) encodePasswordForAD(password string) []byte {
 	return passwordBytes
 }
 
-func (ads *ADService) UpdateUser(username string, updates ADUser) error {
+func (ads *ADService) UpdateUser(username string, updates ADUser, groupname string) error {
     if !ads.enabled {
         return fmt.Errorf("AD service is disabled")
     }
@@ -313,6 +313,12 @@ func (ads *ADService) UpdateUser(username string, updates ADUser) error {
             return fmt.Errorf("failed to update password: %w", err)
         }
     }
+
+	if groupname != "" {
+		if err := ads.MoveUserToAnotherGroup(username, groupname); err != nil {
+			return fmt.Errorf("failed to move to another group: %w", err)
+		}
+	}
 
     logrus.WithField("userDN", userDN).Info("AD user updated successfully")
     return nil
@@ -546,7 +552,7 @@ func (ads *ADService) AddUserToGroup(username, groupName string) error {
 	return nil
 }
 
-func (ads *ADService) RemoveUserFromGroup(username, groupName string) error {
+func (ads *ADService) MoveUserToAnotherGroup(username, groupName string) error {
 	if !ads.enabled {
 		return fmt.Errorf("AD service is disabled")
 	}
@@ -557,12 +563,17 @@ func (ads *ADService) RemoveUserFromGroup(username, groupName string) error {
 	}
 	defer conn.Close()
 
+	oldGroupName, err := ads.GetUserGroups(username)
+	if err != nil {
+		return fmt.Errorf("problem with finding group: %w", err)
+	}
+
 	userDN, err := ads.findUserDN(conn, username)
 	if err != nil {
 		return fmt.Errorf("user not found: %w", err)
 	}
 
-	groupDN, err := ads.findGroupDN(conn, groupName)
+	groupDN, err := ads.findGroupDN(conn, oldGroupName)
 	if err != nil {
 		return fmt.Errorf("group not found: %w", err)
 	}
@@ -579,7 +590,45 @@ func (ads *ADService) RemoveUserFromGroup(username, groupName string) error {
 		"groupDN": groupDN,
 	}).Info("User removed from AD group successfully")
 
+	if err := ads.AddUserToGroup(username, groupname); err != nil {
+		return fmt.Errorf("failed user to add to a group: %w", err)
+	}
+
 	return nil
+}
+
+func (ads *ADService) GetUserGroups(username string) (string, error) {
+	conn, err := ads.connect()
+	if err != nil {
+		return "", err
+	}
+	defer conn.Close()
+
+	searchRequest := ldap.NewSearchRequest(
+		ads.baseDN, 
+		ldap.ScopeWholeSubtree,
+		ldap.NeverDerefAliases,
+		0,
+		0,
+		false,
+		fmt.Sprintf("(sAMAccountName=%s)", username),
+		[]string{"memberOf"},
+		nil,
+	)
+
+	sr, err := conn.Search(searchRequest)
+	if err != nil {
+		return "", err
+	}
+	if len(sr.Entries) != 1 {
+		return "", fmt.Errorf("user not found or multiple entries")
+	}
+
+	groups := sr.Entries[0].GetAttributeValues("memberOf")
+	if len(groups) > 0 {
+		return groups[0], nil
+	}
+	return "", fmt.Errorf("user has no group memberships")
 }
 
 func (ads *ADService) GetAllUsers() ([]ADUser, error) {
