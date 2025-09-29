@@ -598,6 +598,14 @@ func (ads *ADService) MoveUserToAnotherGroup(username, groupName string) error {
 	return nil
 }
 
+func extractCN(dn string) string {
+    parts := strings.Split(dn, ",")
+    if len(parts) > 0 && strings.HasPrefix(parts[0], "CN=") {
+        return strings.TrimPrefix(parts[0], "CN=")
+    }
+    return dn 
+}
+
 func (ads *ADService) GetUserGroups(username string) (string, error) {
 	conn, err := ads.connect()
 	if err != nil {
@@ -627,7 +635,7 @@ func (ads *ADService) GetUserGroups(username string) (string, error) {
 
 	groups := sr.Entries[0].GetAttributeValues("memberOf")
 	if len(groups) > 0 {
-		return groups[0], nil
+		return extractCN(groups[0]), nil
 	}
 	return "", fmt.Errorf("user has no group memberships")
 }
