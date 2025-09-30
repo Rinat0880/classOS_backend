@@ -68,8 +68,8 @@ func (s *IntegratedUserService) Create(checkerId, groupId int, user classosbacke
 	return userId, nil
 }
 
-func (s *IntegratedUserService) GetAll(checkerId, groupId int) ([]classosbackend.User, error) {
-	return s.repo.GetAll(checkerId, groupId)
+func (s *IntegratedUserService) GetAll(checkerId int) ([]classosbackend.User, error) {
+	return s.repo.GetAll(checkerId)
 }
 
 func (s *IntegratedUserService) GetById(checkerId, userId int) (classosbackend.User, error) {

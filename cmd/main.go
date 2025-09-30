@@ -50,12 +50,11 @@ func main() {
 	}
 
 	authService := service.NewAuthService(repos.Authorization)
-	integratedUserService := service.NewIntegratedUserService(repos.User, repos.Group, authService, adService)
 
 	services := &service.Service{
 		Authorization: authService,
 		Group:         service.NewIntegratedGroupService(repos.Group, adService),
-		User:          integratedUserService,
+		User:          service.NewIntegratedUserService(repos.User, repos.Group, authService, adService),
 	}
 
 	handlers := handler.NewHandler(services)

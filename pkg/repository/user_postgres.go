@@ -80,7 +80,7 @@ func (r *UserPostgres) UpdateWithTx(tx *sql.Tx, checkerId, userId int, input cla
 			ON CONFLICT (user_id, group_id) DO NOTHING
 		`, users_listsTable)
 		
-		_, err := tx.Exec(query, userId, *input.GroupID)
+		_, err := tx.Exec(query, userId, *input.GroupID) //мне надо исправить то что группа не меняется и проверить реально ли не изменяется username
 		if err != nil {
 			return err
 		}
@@ -120,17 +120,26 @@ func (r *UserPostgres) Create(groupId int, user classosbackend.User) (int, error
 	return userId, tx.Commit()
 }
 
-func (r *UserPostgres) GetAll(checkerId, groupId int) ([]classosbackend.User, error) {
+func (r *UserPostgres) GetAll(checkerId int) ([]classosbackend.User, error) {
 	var users []classosbackend.User
-	query := fmt.Sprintf("SELECT u.id, u.name, u.username, u.role, u.password_hash FROM %s u JOIN %s ul ON u.id = ul.user_id WHERE ul.group_id = $1", usersTable, users_listsTable)
-	err := r.db.Select(&users, query, groupId)
+	query := fmt.Sprintf(`
+		SELECT u.id, u.name, u.username, u.role, 
+			   COALESCE(ul.group_id, 0) as group_id, 
+			   COALESCE(g.name, '') as group_name 
+		FROM %s u 
+		LEFT JOIN %s ul ON u.id = ul.user_id 
+		LEFT JOIN %s g ON ul.group_id = g.id 
+		WHERE u.id != 1`, 
+		usersTable, users_listsTable, groupsTable)
+	
+	err := r.db.Select(&users, query)
 	return users, err
 }
 
 func (r *UserPostgres) GetById(checkerId, userId int) (classosbackend.User, error) {
 	var user classosbackend.User
 	query := fmt.Sprintf(`
-		SELECT u.id, u.name, u.username, u.role, u.password_hash, ul.group_id, g.name as group_name 
+		SELECT u.id, u.name, u.username, u.role, ul.group_id, g.name as group_name 
 		FROM %s u 
 		LEFT JOIN %s ul ON u.id = ul.user_id 
 		LEFT JOIN %s g ON ul.group_id = g.id 
@@ -187,11 +196,12 @@ func (r *UserPostgres) Update(checkerId, userId int, input classosbackend.Update
 	}
 
 	if input.GroupID != nil {
+		setQuery := fmt.Sprintf("group_id = %d", *input.GroupID)
 		query := fmt.Sprintf(`
-			INSERT INTO %s (user_id, group_id) 
-			VALUES ($1, $2)
-			ON CONFLICT (user_id, group_id) DO NOTHING
-		`, users_listsTable)
+			UPDATE %s  
+			SET %s
+			WHERE user_id = $1
+		`, users_listsTable, setQuery)
 		
 		_, err = tx.Exec(query, userId, *input.GroupID)
 		if err != nil {

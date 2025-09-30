@@ -27,7 +27,7 @@ type Group interface {
 
 type User interface {
 	Create(groupId int, user classosbackend.User) (int, error)
-	GetAll(checkerId, groupId int) ([]classosbackend.User, error)
+	GetAll(checkerId int) ([]classosbackend.User, error)
 	GetById(checkerId, userId int) (classosbackend.User, error)
 	Delete(checkerId, userId int) error
 	Update(checkerId, userId int, input classosbackend.UpdateUserInput) error

@@ -35,13 +35,13 @@ func (h *Handler) InitRoutes() *gin.Engine {
 
 			users := groups.Group(":id/users")
 			{
-				users.GET("/", h.getAllUsers)
 				users.POST("/", h.createUser)
 			}
 		}
 
 		users := api.Group("/users")
 		{
+			users.GET("/", h.getAllUsers)
 			users.GET("/:id", h.getUserById)
 			users.PATCH("/:id", h.updateUser)
 			users.DELETE("/:id", h.deleteUser)

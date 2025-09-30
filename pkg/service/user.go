@@ -36,8 +36,8 @@ func (s *UserService) generatePasswordHash(password string) string {
 	return fmt.Sprintf("%x", hash.Sum([]byte(salt)))
 }
 
-func (s *UserService) GetAll(checkerId, groupId int) ([]classosbackend.User, error) {
-	return s.repo.GetAll(checkerId, groupId)
+func (s *UserService) GetAll(checkerId int) ([]classosbackend.User, error) {
+	return s.repo.GetAll(checkerId)
 }
 
 func (s *UserService) GetById(checkerId, user_id int) (classosbackend.User, error) {

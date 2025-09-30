@@ -43,13 +43,7 @@ func (h *Handler) getAllUsers(c *gin.Context) {
 		return
 	}
 
-	groupId, err := strconv.Atoi(c.Param("id"))
-	if err != nil {
-		newErrorResponse(c, http.StatusBadRequest, "invalid id in params")
-		return
-	}
-
-	users, err := h.services.User.GetAll(checkerId, groupId)
+	users, err := h.services.User.GetAll(checkerId)
 	if err != nil {
 		newErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
