@@ -74,13 +74,14 @@ func (r *UserPostgres) UpdateWithTx(tx *sql.Tx, checkerId, userId int, input cla
 	}
 
 	if input.GroupID != nil {
+		setQuery := fmt.Sprintf("group_id = %d", *input.GroupID)
 		query := fmt.Sprintf(`
-			INSERT INTO %s (user_id, group_id) 
-			VALUES ($1, $2)
-			ON CONFLICT (user_id, group_id) DO NOTHING
-		`, users_listsTable)
+			UPDATE %s  
+			SET %s
+			WHERE user_id = $1
+		`, users_listsTable, setQuery)
 		
-		_, err := tx.Exec(query, userId, *input.GroupID) //мне надо исправить то что группа не меняется и проверить реально ли не изменяется username
+		_, err := tx.Exec(query, userId, *input.GroupID)
 		if err != nil {
 			return err
 		}
@@ -203,7 +204,7 @@ func (r *UserPostgres) Update(checkerId, userId int, input classosbackend.Update
 			WHERE user_id = $1
 		`, users_listsTable, setQuery)
 		
-		_, err = tx.Exec(query, userId, *input.GroupID)
+		_, err := tx.Exec(query, userId, *input.GroupID)
 		if err != nil {
 			return err
 		}
