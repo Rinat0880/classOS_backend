@@ -74,16 +74,24 @@ func (r *UserPostgres) UpdateWithTx(tx *sql.Tx, checkerId, userId int, input cla
 	}
 
 	if input.GroupID != nil {
-	    query := fmt.Sprintf(`
-	        UPDATE %s  
-	        SET group_id = $1
-	        WHERE user_id = $2
+	    deleteQuery := fmt.Sprintf(`
+	        DELETE FROM %s  
+	        WHERE user_id = $1
 	    `, users_listsTable)
 	
-	    _, err := tx.Exec(query, *input.GroupID, userId)
+	    _, err := tx.Exec(deleteQuery, userId)
 	    if err != nil {
 	        return err
 	    }
+
+		insertQuery := fmt.Sprintf(`
+			INSERT INTO %s (user_id, group_id)
+			VALUES ($1, $2)
+		`, users_listsTable)
+		_, err = tx.Exec(insertQuery, userId, *input.GroupID)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -196,16 +204,24 @@ func (r *UserPostgres) Update(checkerId, userId int, input classosbackend.Update
 	}
 
 	if input.GroupID != nil {
-	    query := fmt.Sprintf(`
-	        UPDATE %s  
-	        SET group_id = $1
-	        WHERE user_id = $2
+	    deleteQuery := fmt.Sprintf(`
+	        DELETE FROM %s  
+	        WHERE user_id = $1
 	    `, users_listsTable)
 	
-	    _, err := tx.Exec(query, *input.GroupID, userId)
+	    _, err := tx.Exec(deleteQuery, userId)
 	    if err != nil {
 	        return err
 	    }
+
+		insertQuery := fmt.Sprintf(`
+			INSERT INTO %s (user_id, group_id)
+			VALUES ($1, $2)
+		`, users_listsTable)
+		_, err = tx.Exec(insertQuery, userId, *input.GroupID)
+		if err != nil {
+			return err
+		}
 	}
 
 	return tx.Commit()
